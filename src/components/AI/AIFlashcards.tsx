@@ -11,13 +11,14 @@ import {
   FileText,
   RotateCw,
   CheckCircle2,
-  HelpCircle,
   Shuffle,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Award,
+  Eye,
+  HelpCircle,
+  Lightbulb,
 } from 'lucide-react';
 
 interface AIFlashcardsProps {
@@ -35,7 +36,7 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
   onSaveDeck,
   onNotify,
 }) => {
-  const [sourceType, setSourceType] = useState<'material' | 'note'>('note');
+  const [sourceType, setSourceType] = useState<'note' | 'material'>('note');
   const [selectedId, setSelectedId] = useState<string>(notes[0]?.id || materials[0]?.id || '');
   const [cardCount, setCardCount] = useState<number>(4);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -71,7 +72,7 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
 
       const newDeck: FlashcardDeck = {
         id: `deck_${Date.now()}`,
-        title: `Flashcards: ${title.slice(0, 32)}`,
+        title: `Deck: ${title.replace(/\.[^/.]+$/, '').slice(0, 30)}`,
         sourceType,
         sourceTitle: title,
         cards,
@@ -84,7 +85,7 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
       setIsFlipped(false);
       setMasteredIds(new Set());
 
-      onNotify('success', 'Flashcards Ready', `Generated ${cards.length} study flashcards for "${title}".`);
+      onNotify('success', 'Flashcards Ready', `Generated ${cards.length} crisp study flashcards.`);
     } catch {
       onNotify('error', 'Generation Error', 'Failed to generate flashcards. Please try again.');
     } finally {
@@ -93,17 +94,17 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
   };
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    setIsFlipped((prev) => !prev);
   };
 
   const handleNext = () => {
-    if (!activeDeck) return;
+    if (!activeDeck || activeDeck.cards.length === 0) return;
     setIsFlipped(false);
     setCurrentCardIndex((prev) => (prev + 1) % activeDeck.cards.length);
   };
 
   const handlePrev = () => {
-    if (!activeDeck) return;
+    if (!activeDeck || activeDeck.cards.length === 0) return;
     setIsFlipped(false);
     setCurrentCardIndex((prev) => (prev - 1 + activeDeck.cards.length) % activeDeck.cards.length);
   };
@@ -143,43 +144,53 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
   const progressPercent = totalCards > 0 ? Math.round((masteredCount / totalCards) * 100) : 0;
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 flex items-center justify-center shadow-sm">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">AI Flashcards & Spaced Recall</h1>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Reinforce high-yield terminology, definitions, and formulas with interactive 3D flashcards.
+            <h1 className="text-xl md:text-2xl font-bold text-[#edf0f7] tracking-tight">
+              AI Flashcards & Spaced Recall
+            </h1>
+            <p className="text-xs text-[#9aa2b4] mt-0.5">
+              Review high-yield concepts with clean, eye-friendly cards and zero distraction.
             </p>
           </div>
         </div>
+
+        {activeDeck && (
+          <div className="flex items-center gap-2 text-xs bg-[#242833] border border-[#333947] px-3 py-1.5 rounded-full shadow-sm">
+            <span className="text-[#9aa2b4]">Mastery:</span>
+            <span className="font-bold text-cyan-400">{masteredCount}/{totalCards}</span>
+            <span className="text-xs text-[#9aa2b4]">({progressPercent}%)</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Generator Configuration */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-5 rounded-xl bg-[#1c1c20] border border-white/5 space-y-4 shadow-lg">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <div className="p-5 rounded-2xl bg-[#242833] border border-[#333947] space-y-4 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#edf0f7] flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-cyan-400" />
               1. Choose Source & Size
             </h3>
 
             {/* Source Type Toggle */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-[#121214] rounded-lg border border-white/5">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-[#1a1d24] rounded-xl border border-[#333947]">
               <button
                 type="button"
                 onClick={() => {
                   setSourceType('note');
                   setSelectedId(notes[0]?.id || '');
                 }}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   sourceType === 'note'
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-[#9aa2b4] hover:text-white'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -191,10 +202,10 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                   setSourceType('material');
                   setSelectedId(materials[0]?.id || '');
                 }}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   sourceType === 'material'
-                    ? 'bg-purple-600 text-white shadow'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-[#9aa2b4] hover:text-white'
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -205,13 +216,13 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
             {/* Source Selector */}
             {sourceType === 'note' ? (
               <div>
-                <label className="block text-[11px] font-semibold text-gray-400 uppercase mb-1">
+                <label className="block text-[11px] font-semibold text-[#9aa2b4] uppercase mb-1">
                   Select Study Note
                 </label>
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-2.5 bg-[#1a1d24] border border-[#333947] rounded-xl text-xs text-[#edf0f7] focus:outline-none focus:border-cyan-500 transition-colors"
                 >
                   {notes.map((n) => (
                     <option key={n.id} value={n.id}>
@@ -222,13 +233,13 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
               </div>
             ) : (
               <div>
-                <label className="block text-[11px] font-semibold text-gray-400 uppercase mb-1">
+                <label className="block text-[11px] font-semibold text-[#9aa2b4] uppercase mb-1">
                   Select PDF Document
                 </label>
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-2.5 bg-[#1a1d24] border border-[#333947] rounded-xl text-xs text-[#edf0f7] focus:outline-none focus:border-cyan-500 transition-colors"
                 >
                   {materials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -240,29 +251,29 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
             )}
 
             <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-[#9aa2b4] uppercase mb-1">
                 Deck Size
               </label>
               <select
                 value={cardCount}
                 onChange={(e) => setCardCount(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-3 py-2.5 bg-[#1a1d24] border border-[#333947] rounded-xl text-xs text-[#edf0f7] focus:outline-none focus:border-cyan-500 transition-colors"
               >
                 <option value={4}>4 Cards (Quick Review)</option>
                 <option value={8}>8 Cards (Standard Deck)</option>
-                <option value={12}>12 Cards (Full Chapter)</option>
+                <option value={12}>12 Cards (Comprehensive)</option>
               </select>
             </div>
 
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !selectedSource}
-              className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-semibold text-xs rounded-lg shadow-lg shadow-cyan-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Generating Flashcards...</span>
+                  <span>Generating Study Deck...</span>
                 </>
               ) : (
                 <>
@@ -273,11 +284,11 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
             </button>
           </div>
 
-          {/* Decks Library */}
+          {/* Saved Decks Shelf */}
           {decks.length > 0 && (
-            <div className="p-4 rounded-xl bg-[#1c1c20] border border-white/5 space-y-2.5">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                Your Flashcard Decks ({decks.length})
+            <div className="p-4 rounded-2xl bg-[#242833] border border-[#333947] space-y-2.5 shadow-sm">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#9aa2b4]">
+                Saved Flashcard Decks ({decks.length})
               </h4>
               <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                 {decks.map((d) => (
@@ -289,14 +300,14 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                       setIsFlipped(false);
                       setMasteredIds(new Set());
                     }}
-                    className={`w-full text-left p-2 rounded-lg text-xs flex items-center justify-between border transition-all ${
+                    className={`w-full text-left p-2.5 rounded-xl text-xs flex items-center justify-between border transition-all ${
                       activeDeck?.id === d.id
-                        ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300'
-                        : 'bg-[#141418] border-white/5 text-gray-400 hover:text-white'
+                        ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300 font-semibold'
+                        : 'bg-[#1a1d24] border-[#333947] text-[#9aa2b4] hover:text-white hover:bg-[#202430]'
                     }`}
                   >
-                    <span className="truncate pr-2 font-medium">{d.title}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
+                    <span className="truncate pr-2">{d.title}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#242833] text-[#9aa2b4]">
                       {d.cards.length} cards
                     </span>
                   </button>
@@ -306,33 +317,33 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
           )}
         </div>
 
-        {/* Right Column: 3D Flashcard Viewer */}
+        {/* Right Column: Rock-Solid Flashcard Viewer (ZERO BLEED-THROUGH) */}
         <div className="lg:col-span-7">
           {activeDeck && currentCard ? (
-            <div className="p-6 rounded-xl bg-[#1c1c20] border border-white/5 flex flex-col justify-between min-h-[500px] shadow-lg">
-              {/* Header with Progress */}
+            <div className="p-6 rounded-2xl bg-[#242833] border border-[#333947] flex flex-col justify-between min-h-[520px] shadow-sm">
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                {/* Header & Controls */}
+                <div className="flex items-center justify-between pb-3 border-b border-[#333947]">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
                       Card {currentCardIndex + 1} of {totalCards}
                     </span>
-                    <h3 className="text-sm font-bold text-white truncate max-w-sm mt-0.5">
+                    <h3 className="text-sm font-bold text-[#edf0f7] truncate max-w-sm mt-0.5">
                       {activeDeck.title}
                     </h3>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={handleShuffle}
-                      className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5 transition-colors"
+                      className="p-2 text-[#9aa2b4] hover:text-white rounded-xl hover:bg-[#1a1d24] transition-colors"
                       title="Shuffle Deck"
                     >
                       <Shuffle className="w-4 h-4" />
                     </button>
                     <button
                       onClick={handleReset}
-                      className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5 transition-colors"
+                      className="p-2 text-[#9aa2b4] hover:text-white rounded-xl hover:bg-[#1a1d24] transition-colors"
                       title="Reset Progress"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -340,103 +351,113 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                   </div>
                 </div>
 
-                {/* Mastery progress bar */}
-                <div className="mt-3">
-                  <div className="flex justify-between text-[11px] text-gray-400 mb-1">
-                    <span>Mastered: {masteredCount} of {totalCards}</span>
-                    <span className="text-cyan-400 font-bold">{progressPercent}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[#141414] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-cyan-500 transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
+                {/* Progress bar */}
+                <div className="w-full h-1.5 bg-[#1a1d24] rounded-full overflow-hidden mt-3">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
 
-                {/* 3D Flashcard Canvas */}
-                <div
-                  onClick={handleFlip}
-                  className="my-6 min-h-[260px] cursor-pointer perspective-1000 select-none"
-                >
+                {/* Flashcard Area with Zero-Ghosting Solid Faces */}
+                <div className="my-6">
                   <div
-                    className={`relative w-full h-[260px] rounded-2xl transition-all duration-500 transform-style-preserve-3d shadow-2xl border ${
-                      isFlipped ? 'rotate-y-180 border-cyan-500/40 bg-gradient-to-br from-[#182428] to-[#12161a]' : 'border-white/10 bg-gradient-to-br from-[#202028] to-[#16161c]'
-                    }`}
+                    onClick={handleFlip}
+                    className="cursor-pointer select-none transition-transform hover:scale-[1.01] active:scale-[0.99] duration-200"
                   >
-                    {/* FRONT: TERM */}
-                    <div className="absolute inset-0 backface-hidden p-8 flex flex-col justify-between items-center text-center">
-                      <div className="w-full flex justify-between items-center text-[10px] text-gray-400">
-                        <span className="uppercase font-semibold tracking-wider text-cyan-400">
-                          {currentCard.category || 'Term / Concept'}
-                        </span>
-                        <span className="flex items-center gap-1 text-gray-500">
-                          <RotateCw className="w-3 h-3" /> Click to flip
-                        </span>
+                    {!isFlipped ? (
+                      /* FRONT FACE: TOPIC / QUESTION */
+                      <div className="min-h-[270px] rounded-2xl p-8 bg-[#1a1d24] border-2 border-cyan-500/30 shadow-md flex flex-col justify-between items-center text-center">
+                        <div className="w-full flex justify-between items-center text-xs">
+                          <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[10px] font-semibold uppercase tracking-wider">
+                            {currentCard.category || 'Concept / Term'}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[#9aa2b4] text-[11px]">
+                            <Eye className="w-3.5 h-3.5 text-cyan-400" /> Click to reveal answer
+                          </span>
+                        </div>
+
+                        <div className="my-auto py-6 max-w-md">
+                          <span className="text-xs font-semibold text-cyan-400/90 uppercase tracking-widest block mb-2">
+                            Term / Question
+                          </span>
+                          <h2 className="text-2xl md:text-3xl font-extrabold text-[#edf0f7] tracking-tight leading-snug">
+                            {currentCard.term}
+                          </h2>
+                        </div>
+
+                        <div className="w-full pt-3 border-t border-[#2d3240] flex items-center justify-center gap-2 text-xs text-[#9aa2b4]">
+                          <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
+                          <span>Tap card or press &ldquo;Flip Card&rdquo; below</span>
+                        </div>
                       </div>
+                    ) : (
+                      /* BACK FACE: DEFINITION & EXPLANATION ONLY (CLEAN, NO TOPIC OVERLAY) */
+                      <div className="min-h-[270px] rounded-2xl p-8 bg-[#1f2430] border-2 border-emerald-500/40 shadow-md flex flex-col justify-between items-center text-center animate-fade-in">
+                        <div className="w-full flex justify-between items-center text-xs">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3 text-emerald-400" /> Definition & Explanation
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[#9aa2b4] text-[11px]">
+                            <RotateCw className="w-3.5 h-3.5 text-emerald-400" /> Click to flip back
+                          </span>
+                        </div>
 
-                      <div className="my-auto">
-                        <h2 className="text-2xl font-extrabold text-white tracking-tight">
-                          {currentCard.term}
-                        </h2>
+                        <div className="my-auto py-4 max-w-lg">
+                          <p className="text-sm md:text-base font-normal text-[#edf0f7] leading-relaxed">
+                            {currentCard.definition}
+                          </p>
+                        </div>
+
+                        <div className="w-full pt-3 border-t border-[#2d3240] flex items-center justify-between text-xs text-[#9aa2b4]">
+                          <span className="text-[11px] text-emerald-400 font-medium">
+                            Recall accuracy check
+                          </span>
+                          <span className="text-[11px] text-[#9aa2b4]">
+                            Did you know this?
+                          </span>
+                        </div>
                       </div>
-
-                      <span className="text-[11px] text-gray-500">
-                        Tap anywhere to reveal definition
-                      </span>
-                    </div>
-
-                    {/* BACK: DEFINITION */}
-                    <div className="absolute inset-0 backface-hidden rotate-y-180 p-8 flex flex-col justify-between items-center text-center">
-                      <div className="w-full flex justify-between items-center text-[10px] text-cyan-300">
-                        <span className="uppercase font-semibold tracking-wider">
-                          Explanation / Definition
-                        </span>
-                        <span className="flex items-center gap-1 text-gray-400">
-                          <RotateCw className="w-3 h-3" /> Click to flip back
-                        </span>
-                      </div>
-
-                      <div className="my-auto max-w-lg">
-                        <p className="text-sm font-medium text-gray-100 leading-relaxed">
-                          {currentCard.definition}
-                        </p>
-                      </div>
-
-                      <span className="text-[11px] text-cyan-400/80">
-                        {currentCard.term}
-                      </span>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Bottom Card Controls */}
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+              <div className="pt-4 border-t border-[#333947] flex items-center justify-between gap-3">
                 <button
                   onClick={handlePrev}
-                  className="px-3.5 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 flex items-center gap-1 transition-colors"
+                  className="px-3.5 py-2.5 rounded-xl bg-[#1a1d24] hover:bg-[#202430] text-xs text-[#edf0f7] border border-[#333947] flex items-center gap-1.5 transition-colors shadow-sm"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  <span>Prev</span>
+                  <span>Previous</span>
                 </button>
 
-                {/* Mark as Mastered button */}
+                {/* Flip Button */}
+                <button
+                  onClick={handleFlip}
+                  className="px-4 py-2.5 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 text-cyan-300 text-xs font-semibold flex items-center gap-2 transition-all shadow-sm"
+                >
+                  <RotateCw className="w-4 h-4" />
+                  <span>{isFlipped ? 'Show Term' : 'Flip Card'}</span>
+                </button>
+
+                {/* Mastery Toggle */}
                 <button
                   onClick={() => handleToggleMastered(currentCard.id)}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 border transition-all ${
+                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all shadow-sm ${
                     isCurrentMastered
-                      ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 shadow-lg shadow-emerald-950/50'
-                      : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'
+                      ? 'bg-emerald-600/25 border-emerald-500 text-emerald-300'
+                      : 'bg-[#1a1d24] border-[#333947] text-[#9aa2b4] hover:text-white'
                   }`}
                 >
-                  <CheckCircle2 className={`w-4 h-4 ${isCurrentMastered ? 'text-emerald-400' : 'text-gray-500'}`} />
-                  <span>{isCurrentMastered ? 'Mastered!' : 'Mark as Mastered'}</span>
+                  <CheckCircle2 className={`w-4 h-4 ${isCurrentMastered ? 'text-emerald-400' : 'text-[#9aa2b4]'}`} />
+                  <span>{isCurrentMastered ? 'Mastered!' : 'Mark Mastered'}</span>
                 </button>
 
                 <button
                   onClick={handleNext}
-                  className="px-3.5 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 flex items-center gap-1 transition-colors"
+                  className="px-3.5 py-2.5 rounded-xl bg-[#1a1d24] hover:bg-[#202430] text-xs text-[#edf0f7] border border-[#333947] flex items-center gap-1.5 transition-colors shadow-sm"
                 >
                   <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
@@ -444,10 +465,10 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-12 text-center bg-[#1c1c20] rounded-xl border border-white/5 space-y-3 min-h-[500px] flex flex-col items-center justify-center">
+            <div className="p-12 text-center bg-[#242833] rounded-2xl border border-[#333947] space-y-3 min-h-[520px] flex flex-col items-center justify-center shadow-sm">
               <Layers className="w-10 h-10 text-cyan-400 opacity-40 mx-auto" />
-              <h3 className="text-sm font-bold text-white">No Flashcard Deck Selected</h3>
-              <p className="text-xs text-gray-400 max-w-sm">
+              <h3 className="text-sm font-bold text-[#edf0f7]">No Flashcard Deck Selected</h3>
+              <p className="text-xs text-[#9aa2b4] max-w-sm">
                 Generate flashcards from your study materials or notes to begin your memory review drill.
               </p>
             </div>

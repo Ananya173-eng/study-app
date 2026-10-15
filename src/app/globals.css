@@ -3,53 +3,87 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 240, 240, 240;
-  --background-start-rgb: 20, 20, 20;
-  --background-end-rgb: 15, 15, 15;
+  --color-bg-base: #1a1d24;
+  --color-bg-surface: #242833;
+  --color-bg-surface-hover: #2b303d;
+  --color-border: #333947;
+  --color-text-primary: #edf0f7;
+  --color-text-secondary: #9aa2b4;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: #121214;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-base);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
 }
 
-/* Custom smooth scrollbar (VS Code style) */
+/* Eye-friendly calm scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: #181a20;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 4px;
+  background: #393f4e;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #4a5266;
 }
 
-/* 3D Flashcard flip */
-.perspective-1000 {
-  perspective: 1000px;
+/* Rock-Solid Zero-Ghosting 3D Flashcard Flip */
+.flashcard-scene {
+  perspective: 1200px;
 }
 
-.transform-style-preserve-3d {
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
-.backface-hidden {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.rotate-y-180 {
+.flashcard-inner.is-flipped {
   transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flashcard-front {
+  background-color: #242833;
+  transform: rotateY(0deg);
+  -webkit-transform: rotateY(0deg);
+  z-index: 2;
+}
+
+.flashcard-back {
+  background-color: #1f232d;
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+  z-index: 1;
 }
 
 /* Animations */
@@ -59,14 +93,14 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes pulseSubtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
 }
 
 .animate-pulse-subtle {
-  animation: pulseSubtle 2s infinite ease-in-out;
+  animation: pulseSubtle 3s infinite ease-in-out;
 }

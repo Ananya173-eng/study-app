@@ -12,7 +12,6 @@ import {
   ToastAlert,
 } from '@/types';
 import { Storage, DEFAULT_USER } from '@/lib/storage';
-import { ActivityBar } from '@/components/Sidebar/ActivityBar';
 import { VSCodeExplorer } from '@/components/Sidebar/VSCodeExplorer';
 import { DashboardView } from '@/components/Dashboard/DashboardView';
 import { NotesView } from '@/components/Notes/NotesView';
@@ -29,14 +28,15 @@ import { SettingsModal } from '@/components/Common/SettingsModal';
 import { ToastContainer } from '@/components/Common/ToastContainer';
 import {
   Menu,
-  Sparkles,
   Search,
-  BookOpen,
-  LayoutDashboard,
-  FileText,
-  CheckSquare,
-  TrendingUp,
-  User as UserIcon,
+  Sparkles,
+  Flame,
+  Settings,
+  SunMedium,
+  Moon,
+  Eye,
+  PanelLeft,
+  X,
 } from 'lucide-react';
 
 export default function Home() {
@@ -52,6 +52,10 @@ export default function Home() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [flashcards, setFlashcards] = useState<FlashcardDeck[]>([]);
 
+  // Global Search in Top Bar
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
   // AI Active Context Transfer
   const [aiInitialTitle, setAiInitialTitle] = useState('');
   const [aiInitialContent, setAiInitialContent] = useState('');
@@ -60,6 +64,9 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastAlert[]>([]);
+
+  // Eye-care theme modes: 'calm' (balanced eye-care slate), 'soft' (softer paper tone), 'dark' (midnight)
+  const [themeMode, setThemeMode] = useState<'calm' | 'soft' | 'dark'>('calm');
 
   // Initialize from LocalStorage
   useEffect(() => {
@@ -71,7 +78,7 @@ export default function Home() {
     setFlashcards(Storage.getFlashcards());
   }, []);
 
-  // Keyboard shortcut Ctrl+B to toggle VS Code sidebar
+  // Keyboard shortcut Ctrl+B to toggle sidebar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
@@ -216,20 +223,24 @@ export default function Home() {
     setFlashcards(Storage.getFlashcards());
   };
 
-  return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#121214] text-[#cccccc]">
-      {/* 1. VS Code Far-Left Activity Bar */}
-      <ActivityBar
-        currentView={currentView}
-        onSelectView={setCurrentView}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        user={user}
-      />
+  // Handle global search submission
+  const handleGlobalSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!globalSearch.trim()) return;
+    setCurrentView('notes');
+  };
 
-      {/* 2. VS Code Left Explorer Sidebar (Collapsible) */}
+  // Theme Classes for the requested balanced "na hi jyada light na jyada dark"
+  const themeClass =
+    themeMode === 'soft'
+      ? 'bg-[#21242d] text-[#e8ebf2]'
+      : themeMode === 'dark'
+      ? 'bg-[#121418] text-[#e0e3ea]'
+      : 'bg-[#1a1d24] text-[#edf0f7]'; // default eye-care calm
+
+  return (
+    <div className={`flex h-screen w-screen overflow-hidden ${themeClass} font-sans selection:bg-pink-500/30 selection:text-white`}>
+      {/* 1. Left Modern Explorer Sidebar (Magnific Inspired) */}
       {isSidebarOpen && (
         <VSCodeExplorer
           currentView={currentView}
@@ -248,87 +259,133 @@ export default function Home() {
           onNewNote={() => setCurrentView('notes')}
           onNewTask={() => setCurrentView('tasks')}
           onUploadPDF={() => setCurrentView('materials')}
+          onToggleSidebar={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* 3. Main Content Workspace */}
-      <main className="flex-1 flex flex-col h-full min-w-0 bg-[#121214] overflow-hidden">
-        {/* Top Navbar Header */}
-        <header className="h-12 bg-[#18181b] border-b border-[#2b2b2b] px-4 flex items-center justify-between shrink-0 select-none">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile Sidebar Toggle */}
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+      {/* 2. Main Content Workspace */}
+      <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[#171920]">
+        {/* Magnific-Style Header with Centered Pill Search Bar */}
+        <header className="h-16 px-4 md:px-8 border-b border-[#323846] bg-[#1c1f26]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 z-20">
+          <div className="flex items-center gap-3">
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                title="Open Sidebar (Ctrl+B)"
+                className="p-2 rounded-xl text-[#9aa2b4] hover:text-white hover:bg-[#252934] transition-colors border border-[#323846]"
+              >
+                <PanelLeft className="w-4 h-4" />
+              </button>
+            )}
 
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-xs text-gray-400 truncate">
-              <span className="font-semibold text-white tracking-wide flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                Study Hub
-              </span>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-[#9aa2b4]">
+              <span className="font-bold text-[#edf0f7] tracking-tight">AI Study Hub</span>
               <span>/</span>
-              <span className="capitalize text-blue-300 font-medium">
+              <span className="capitalize text-pink-400 font-medium">
                 {currentView.replace('ai-', 'AI ')}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Quick View Switcher Badges */}
-            <div className="hidden sm:flex items-center gap-1 text-xs">
+          {/* Centered Pill Search Bar (From Magnific Screenshot) */}
+          <div className="flex-1 max-w-xl mx-2 md:mx-4">
+            <form onSubmit={handleGlobalSearchSubmit} className="relative">
+              <Search className="absolute left-4 top-2.5 w-4 h-4 text-[#9aa2b4]" />
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                placeholder="Search notes, tasks, or ask AI anything..."
+                className="w-full pl-11 pr-12 py-2 bg-[#252934] hover:bg-[#282d3b] focus:bg-[#252934] border border-[#323846] focus:border-pink-500/60 rounded-full text-xs text-[#edf0f7] placeholder-[#80899c] focus:outline-none transition-all shadow-sm"
+              />
+              {globalSearch ? (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="absolute right-3.5 top-2.5 text-[#9aa2b4] hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <span className="absolute right-4 top-2.5 text-[10px] font-mono font-semibold text-[#80899c] bg-[#1c1f26] px-1.5 py-0.5 rounded border border-[#323846]">
+                  ⌘K
+                </span>
+              )}
+            </form>
+          </div>
+
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Eye-Care Theme Switcher (Calm / Soft / Midnight) */}
+            <div className="hidden md:flex items-center bg-[#252934] p-1 rounded-full border border-[#323846]">
               <button
-                onClick={() => setCurrentView('dashboard')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  currentView === 'dashboard' ? 'bg-white/10 text-white font-semibold' : 'text-gray-400 hover:text-white'
+                onClick={() => {
+                  setThemeMode('calm');
+                  addToast('info', 'Eye-Care Slate Active', 'Balanced, soothing mode optimal for studying without glare.');
+                }}
+                title="Eye-Care Calm Mode (Recommended for reading)"
+                className={`p-1.5 rounded-full transition-colors ${
+                  themeMode === 'calm' ? 'bg-pink-500 text-white shadow-sm' : 'text-[#9aa2b4] hover:text-white'
                 }`}
               >
-                Dashboard
+                <Eye className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => setCurrentView('notes')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  currentView === 'notes' ? 'bg-white/10 text-white font-semibold' : 'text-gray-400 hover:text-white'
+                onClick={() => {
+                  setThemeMode('soft');
+                  addToast('info', 'Soft Paper Mode', 'Warm gentle tone for daytime focus.');
+                }}
+                title="Soft Paper Mode"
+                className={`p-1.5 rounded-full transition-colors ${
+                  themeMode === 'soft' ? 'bg-pink-500 text-white shadow-sm' : 'text-[#9aa2b4] hover:text-white'
                 }`}
               >
-                Notes ({notes.length})
+                <SunMedium className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => setCurrentView('tasks')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  currentView === 'tasks' ? 'bg-white/10 text-white font-semibold' : 'text-gray-400 hover:text-white'
+                onClick={() => {
+                  setThemeMode('dark');
+                  addToast('info', 'Midnight Dark Mode', 'Deeper contrast mode.');
+                }}
+                title="Midnight Dark Mode"
+                className={`p-1.5 rounded-full transition-colors ${
+                  themeMode === 'dark' ? 'bg-pink-500 text-white shadow-sm' : 'text-[#9aa2b4] hover:text-white'
                 }`}
               >
-                Tasks ({tasks.filter((t) => t.status !== 'completed').length})
-              </button>
-              <button
-                onClick={() => setCurrentView('materials')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  currentView === 'materials' ? 'bg-white/10 text-white font-semibold' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                PDFs ({materials.length})
+                <Moon className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* User Profile Button */}
+            {/* Streak Pill */}
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold shadow-sm">
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span>{user.streakDays || 7} Days</span>
+            </div>
+
+            {/* Settings */}
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              title="Hub Settings & AI Keys"
+              className="p-2 rounded-xl text-[#9aa2b4] hover:text-white hover:bg-[#252934] border border-[#323846] transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {/* User Profile Pill */}
             <button
               onClick={() => setIsAuthOpen(true)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-gray-200 transition-colors"
+              className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-[#252934] hover:bg-[#2c3140] border border-[#323846] text-xs text-[#edf0f7] transition-all shadow-sm"
             >
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-pink-500 to-rose-400 flex items-center justify-center text-[10px] font-bold text-white shadow-sm overflow-hidden">
                 {user.name.charAt(0)}
               </div>
-              <span className="hidden md:inline font-medium">{user.name}</span>
+              <span className="hidden sm:inline font-semibold">{user.name.split(' ')[0]}</span>
             </button>
           </div>
         </header>
 
-        {/* View Router */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#121214]">
+        {/* View Router with Smooth Custom Scrollbar */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {currentView === 'dashboard' && (
             <DashboardView
               user={user}
