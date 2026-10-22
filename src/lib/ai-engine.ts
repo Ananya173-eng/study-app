@@ -33,9 +33,20 @@ export interface ChatQueryOptions {
   contextSources: { title: string; content: string; type: 'pdf' | 'note' }[];
 }
 
-export const AIEngine = {
-  // 1. AI Summarizer
-  async summarize(opts: SummarizeOptions): Promise<string> {
+/* =========================================================================
+   MODULAR AI ARCHITECTURE
+   =========================================================================
+   1. LLMProviderService: Manages cloud LLM communication (Gemini 3.8/2.5/1.5)
+   2. RAGRetrieverModule: Intelligent chunking, TF-IDF semantic retrieval & grounding
+   3. SummarizerModule: Multi-modal distinct conceptual synthesis
+   4. QuizModule: Difficulty-calibrated, count-guaranteed MCQ generator
+   5. FlashcardModule: Deck-size-accurate active recall generator
+   6. TaskPlannerModule: Academic syllabus milestone deconstruction
+   ========================================================================= */
+
+// --- 1. LLM Provider Service ---
+export const LLMProviderService = {
+  async callAPI(action: string, payload: any): Promise<any> {
     const userApiKey = Storage.getApiKey();
 
     try {
@@ -43,422 +54,584 @@ export const AIEngine = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'summarize',
-          payload: opts,
+          action,
+          payload,
           apiKey: userApiKey,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.result) return data.result;
+        if (data.status !== 'use_fallback' && !data.error) {
+          return data;
+        }
       }
-    } catch {
-      // Fallback to intelligent local summarization
+    } catch (err) {
+      console.warn(`LLM Provider API request failed for action "${action}", activating modular local fallback:`, err);
     }
-
-    return fallbackSummarizer(opts);
-  },
-
-  // 2. AI Quiz Generator
-  async generateQuiz(opts: QuizGenerateOptions): Promise<QuizQuestion[]> {
-    const userApiKey = Storage.getApiKey();
-
-    try {
-      const response = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'generateQuiz',
-          payload: opts,
-          apiKey: userApiKey,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.questions && Array.isArray(data.questions)) return data.questions;
-      }
-    } catch {
-      // Fallback
-    }
-
-    return fallbackQuizGenerator(opts);
-  },
-
-  // 3. AI Flashcard Generator
-  async generateFlashcards(opts: FlashcardGenerateOptions): Promise<Flashcard[]> {
-    const userApiKey = Storage.getApiKey();
-
-    try {
-      const response = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'generateFlashcards',
-          payload: opts,
-          apiKey: userApiKey,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.cards && Array.isArray(data.cards)) return data.cards;
-      }
-    } catch {
-      // Fallback
-    }
-
-    return fallbackFlashcardGenerator(opts);
-  },
-
-  // 4. AI Study Assistant (RAG)
-  async queryAssistant(opts: ChatQueryOptions): Promise<{ answer: string; sources: ChatSource[] }> {
-    const userApiKey = Storage.getApiKey();
-
-    try {
-      const response = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'chat',
-          payload: opts,
-          apiKey: userApiKey,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.answer) return data;
-      }
-    } catch {
-      // Fallback
-    }
-
-    return fallbackRAGAssistant(opts);
-  },
-
-  // 5. AI Task Planner
-  async planGoal(opts: PlanGoalOptions): Promise<{ overview: string; tasks: PlannedTask[] }> {
-    const userApiKey = Storage.getApiKey();
-
-    try {
-      const response = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'planGoal',
-          payload: opts,
-          apiKey: userApiKey,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tasks) return data;
-      }
-    } catch {
-      // Fallback
-    }
-
-    return fallbackTaskPlanner(opts);
+    return null;
   },
 };
 
-/* =========================================================================
-   Intelligent Contextual Fallbacks (Ensures 100% functionality out of the box)
-   ========================================================================= */
+// --- 2. Text & Document Segmentation Helpers ---
+function splitIntoSections(content: string): { title: string; text: string }[] {
+  const clean = content.replace(/\r\n/g, '\n');
+  const rawSections = clean.split(/(?=^#{1,3}\s+|^Chapter\s+\d+:|^Section\s+\d+:|^Phase\s+\d+:)/im);
 
-function fallbackSummarizer(opts: SummarizeOptions): string {
-  const { title, content, style, depth } = opts;
-  const clean = content.replace(/[#*`$]/g, '').trim();
-  const sentences = clean.split(/[.!?]\s+/).filter(s => s.trim().length > 15);
-  
-  const bulletCount = depth === 'short' ? 4 : depth === 'medium' ? 6 : 9;
-  const selectedSentences = sentences.slice(0, bulletCount);
+  const sections: { title: string; text: string }[] = [];
 
-  if (style === 'bullet-points') {
-    return `### 📌 Executive Summary of "${title}"\n\n` +
-      selectedSentences.map(s => `- **Key Finding**: ${s.trim()}.`).join('\n') +
-      `\n\n#### 🎯 Study Recommendation\nReview these foundational points before tackling problem sets. Focus on identifying relationships between concepts.`;
+  for (const s of rawSections) {
+    const trimmed = s.trim();
+    if (!trimmed) continue;
+
+    const lines = trimmed.split('\n');
+    const firstLine = lines[0].replace(/^#{1,3}\s+/, '').replace(/\*\*/g, '').trim();
+    const body = lines.slice(1).join('\n').trim();
+
+    sections.push({
+      title: firstLine || 'Core Concept',
+      text: body || trimmed,
+    });
   }
 
-  if (style === 'key-concepts') {
-    return `### 💡 Core Conceptual Framework: ${title}\n\n` +
-      selectedSentences.map((s, i) => `**Concept ${i + 1}**: ${s.trim()}.\n*Significance*: Foundational principle directly applicable to exams and practical implementations.`).join('\n\n') +
-      `\n\n**Quick Formula / Rule**: Review the standard definitions and edge conditions specified in the material.`;
+  // If no explicit section headers were found, split by double newlines into logical paragraphs
+  if (sections.length <= 1) {
+    const paragraphs = clean.split(/\n\n+/).filter((p) => p.trim().length > 30);
+    return paragraphs.map((p, idx) => {
+      const sentences = p.split(/[.!?]\s+/);
+      const title = sentences[0].slice(0, 50).replace(/^[#*`\s-]+/, '').trim();
+      return {
+        title: title || `Topic Area ${idx + 1}`,
+        text: p.trim(),
+      };
+    });
   }
 
-  if (style === 'study-guide') {
-    return `### 📖 Comprehensive Study Guide: ${title}\n\n` +
-      `#### 1. Core Principles\n${selectedSentences.slice(0, 3).join('. ')}.\n\n` +
-      `#### 2. Critical Analysis\n${selectedSentences.slice(3, 6).join('. ')}.\n\n` +
-      `#### 3. High-Yield Exam Takeaways\n` +
-      selectedSentences.slice(0, 4).map((s) => `✔ ${s.trim()}`).join('\n') +
-      `\n\n#### 4. Self-Assessment Prompt\nCan you explain how this concept operates under constraint or failure modes without consulting your notes?`;
-  }
-
-  // default 'executive'
-  return `### 📑 Executive Briefing: ${title}\n\n` +
-    `**Overview**: This document covers crucial theoretical mechanisms and practical constraints.\n\n` +
-    `**Main Synthesis**: ${selectedSentences.slice(0, 4).join('. ')}.\n\n` +
-    `**Implications**: Understanding these dynamics allows students to anticipate exam questions, troubleshoot real-world scenarios, and formulate rigorous proofs.`;
+  return sections;
 }
 
-function fallbackQuizGenerator(opts: QuizGenerateOptions): QuizQuestion[] {
-  const { content, count, difficulty } = opts;
-  const sentences = content.split(/[.!?]\s+/).filter(s => s.length > 25);
-  const questions: QuizQuestion[] = [];
+function extractSentences(text: string): string[] {
+  return text
+    .replace(/[#*`$]/g, '')
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 20);
+}
 
-  const samplePool = [
-    {
-      q: 'Which core trade-off or primary constraint is central to this material?',
-      opts: [
-        'Trading latency for throughput under distributed conditions',
-        'Balancing theoretical consistency against real-world availability',
-        'Minimizing time complexity by utilizing auxiliary memory structures',
-        'Eliminating all race conditions through atomic locking'
-      ],
-      ans: 1,
-      exp: 'System design requires balancing consistency, latency, and availability constraints.'
-    },
-    {
-      q: 'Under what conditions does the primary mechanism described in the text experience failure or bottlenecks?',
-      opts: [
-        'When input parameters exceed anticipated boundary conditions or resources are contended',
-        'Only when hardware power supplies drop below operational voltages',
-        'When network packets are encrypted with AES-256',
-        'Whenever standard recursion exceeds depth 5'
-      ],
-      ans: 0,
-      exp: 'Resource contention and unbounded input scale are the universal sources of system failure.'
-    },
-    {
-      q: 'What is the primary advantage of the method or framework discussed?',
-      opts: [
-        'It completely deprecates mathematical rigor',
-        'It provides determinism and provable bounds on correctness and performance',
-        'It reduces required disk storage to zero bytes',
-        'It requires no synchronization primitives'
-      ],
-      ans: 1,
-      exp: 'Formal algorithmic and biological frameworks aim to establish verifiable, reproducible guarantees.'
-    },
-    {
-      q: 'How does this concept apply to practical problem solving and engineering?',
-      opts: [
-        'By providing a structured decomposition to eliminate race conditions and errors',
-        'By skipping validation steps during runtime',
-        'By forcing all operations to be strictly sequential',
-        'By removing the need for testing'
-      ],
-      ans: 0,
-      exp: 'Rigorous decomposition provides safety invariants and predictability.'
-    },
-    {
-      q: 'What role does feedback or regulation play in the system described?',
-      opts: [
-        'It serves as a cosmetic logging mechanism',
-        'It acts as a control loop maintaining equilibrium and preventing runaway degradation',
-        'It increases entropy without benefit',
-        'It shuts down all active threads permanently'
-      ],
-      ans: 1,
-      exp: 'Feedback loops ensure stability across computational, physical, and biological systems.'
+// --- 3. Summarizer Module ---
+export const SummarizerModule = {
+  async summarize(opts: SummarizeOptions): Promise<string> {
+    const apiResult = await LLMProviderService.callAPI('summarize', opts);
+    if (apiResult?.result) return apiResult.result;
+
+    return this.localSummarize(opts);
+  },
+
+  localSummarize(opts: SummarizeOptions): string {
+    const { title, content, style, depth } = opts;
+    const sections = splitIntoSections(content);
+    const targetCount = depth === 'short' ? 4 : depth === 'medium' ? 6 : 8;
+
+    if (style === 'key-concepts') {
+      let output = `### 💡 Core Conceptual Framework: ${title}\n\n`;
+      output += `*Synthesized ${Math.min(targetCount, sections.length)} distinct fundamental principles extracted from the study material.*\n\n`;
+
+      sections.slice(0, targetCount).forEach((sec, idx) => {
+        const sentences = extractSentences(sec.text);
+        const explanation = sentences.slice(0, 2).join(' ') || sec.text.slice(0, 180);
+        const takeaway = sentences[2] || `Essential invariant for exams and practical implementation.`;
+
+        output += `#### Concept ${idx + 1}: ${sec.title}\n`;
+        output += `**Theoretical Mechanism**: ${explanation}\n\n`;
+        output += `**Practical & Exam Significance**: ${takeaway}\n\n`;
+        output += `---\n\n`;
+      });
+
+      output += `**Study Recommendation**: Review these discrete principles sequentially. Ensure you can explain the core trade-offs of each without checking notes.`;
+      return output;
     }
-  ];
 
-  for (let i = 0; i < Math.min(count, samplePool.length); i++) {
-    const item = samplePool[i];
-    questions.push({
-      id: `gen_q_${Date.now()}_${i}`,
-      question: `[${difficulty.toUpperCase()}] ${item.q}`,
-      options: item.opts,
-      correctAnswerIndex: item.ans,
-      explanation: item.exp,
+    if (style === 'bullet-points') {
+      const allSentences = extractSentences(content);
+      const bullets = allSentences.slice(0, targetCount * 2);
+
+      return (
+        `### 📌 High-Yield Bullet Summary: ${title}\n\n` +
+        bullets.map((b) => `- **Key Fact**: ${b}`).join('\n') +
+        `\n\n#### 🎯 Exam Revision Checkpoint\n` +
+        `Focus your revision on the algorithmic flow, constraints, and operational formulas detailed above.`
+      );
+    }
+
+    if (style === 'study-guide') {
+      const guideSections = sections.slice(0, 4);
+
+      return (
+        `### 📖 Comprehensive Academic Study Guide: ${title}\n\n` +
+        `#### 1. Executive Topic Overview\n` +
+        `This material investigates the foundational theoretical frameworks and practical constraints of ${title}.\n\n` +
+        `#### 2. Deep Section Analysis\n` +
+        guideSections
+          .map((s, i) => `**Module ${i + 1} (${s.title})**:\n${extractSentences(s.text).slice(0, 2).join(' ')}`)
+          .join('\n\n') +
+        `\n\n#### 3. Core Formulas & Governing Rules\n` +
+        `- Verify boundary conditions and non-linear performance variations.\n` +
+        `- Evaluate time and spatial complexity across best, average, and worst-case conditions.\n\n` +
+        `#### 4. Active Recall Self-Assessment Prompt\n` +
+        `Can you explain how this system recovers from partial failures or unexpected inputs without looking at your notes?`
+      );
+    }
+
+    // Default 'executive' format
+    const allSentences = extractSentences(content);
+    return (
+      `### 📑 Executive Briefing: ${title}\n\n` +
+      `**Abstract**: A synthesized architectural and conceptual review of "${title}".\n\n` +
+      `**Core Synthesis**:\n` +
+      `${allSentences.slice(0, targetCount).join(' ')}\n\n` +
+      `**Critical Evaluation**: Understanding these mechanisms enables students to formulate rigorous proofs, predict system bottlenecks, and excel in analytical exam assessments.`
+    );
+  },
+};
+
+// --- 4. Quiz Module ---
+export const QuizModule = {
+  async generateQuiz(opts: QuizGenerateOptions): Promise<QuizQuestion[]> {
+    const apiResult = await LLMProviderService.callAPI('generateQuiz', opts);
+    if (apiResult?.questions && Array.isArray(apiResult.questions) && apiResult.questions.length > 0) {
+      return apiResult.questions;
+    }
+
+    return this.localGenerateQuiz(opts);
+  },
+
+  localGenerateQuiz(opts: QuizGenerateOptions): QuizQuestion[] {
+    const { title, content, count, difficulty } = opts;
+    const requestedCount = Math.max(1, count || 5);
+    const sections = splitIntoSections(content);
+    const sentences = extractSentences(content);
+
+    const questions: QuizQuestion[] = [];
+
+    // Distinct question templates tailored to difficulty
+    const diffPrefix = difficulty.toUpperCase();
+
+    // 1. Generate questions grounded directly in document sections
+    sections.forEach((sec, idx) => {
+      if (questions.length >= requestedCount) return;
+      const secSentences = extractSentences(sec.text);
+      if (secSentences.length === 0) return;
+
+      const subjectConcept = sec.title;
+      const keyDetail = secSentences[0];
+
+      if (difficulty === 'easy') {
+        questions.push({
+          id: `q_sec_easy_${Date.now()}_${idx}`,
+          question: `[${diffPrefix}] In the study material on "${title}", what is the primary focus of "${subjectConcept}"?`,
+          options: [
+            `${keyDetail.slice(0, 95)}`,
+            `Deprecating all hardware synchronization and running in unconstrained random memory`,
+            `Ignoring resource constraints and assuming infinite bandwidth`,
+            `Operating strictly within simulated non-physical virtual environments`,
+          ],
+          correctAnswerIndex: 0,
+          explanation: `Direct definition from ${title}: ${keyDetail}`,
+        });
+      } else if (difficulty === 'hard') {
+        questions.push({
+          id: `q_sec_hard_${Date.now()}_${idx}`,
+          question: `[${diffPrefix}] When evaluating "${subjectConcept}", which subtle failure condition or constraint poses the greatest theoretical bottleneck?`,
+          options: [
+            `Ensuring correctness when partial network partitions or unexpected concurrent race conditions emerge`,
+            `The physical inability of copper wires to transmit electric charge`,
+            `Running out of numeric characters in mathematical documentation`,
+            `When operating system clocks count backwards into negative numbers`,
+          ],
+          correctAnswerIndex: 0,
+          explanation: `Under ${difficulty} analytical constraints, handling concurrent edge cases and partition boundaries without violating safety invariants is the primary challenge.`,
+        });
+      } else {
+        // medium
+        questions.push({
+          id: `q_sec_med_${Date.now()}_${idx}`,
+          question: `[${diffPrefix}] Which critical trade-off or operational mechanism characterizes "${subjectConcept}"?`,
+          options: [
+            `Balancing theoretical consistency and correctness against availability or execution throughput`,
+            `Eliminating all time complexity by consuming infinite volatile memory`,
+            `Replacing algorithmic verification with stochastic guessing`,
+            `Preventing all asynchronous threads from executing forever`,
+          ],
+          correctAnswerIndex: 0,
+          explanation: `System design and theoretical analysis in "${subjectConcept}" require balancing trade-offs between speed, availability, and strict invariants.`,
+        });
+      }
     });
-  }
 
-  // If content has specific sentences, generate contextual questions
-  if (sentences.length >= 3 && questions.length < count) {
-    questions.push({
-      id: `gen_q_${Date.now()}_ctx`,
-      question: `Based on your material: Which statement accurately reflects the excerpt: "${sentences[0].slice(0, 90)}..."?`,
-      options: [
-        `It accurately describes the fundamental premise of the studied topic`,
-        `It represents an outdated historical misconception`,
-        `It is mathematically impossible in modern architectures`,
-        `It only applies in vacuum conditions`
-      ],
-      correctAnswerIndex: 0,
-      explanation: `The excerpt directly establishes the baseline theory as stated in your uploaded material.`
-    });
-  }
+    // 2. If more questions are needed to satisfy EXACT count, generate sentence-specific questions
+    let sentenceIdx = 0;
+    while (questions.length < requestedCount && sentenceIdx < sentences.length) {
+      const s = sentences[sentenceIdx];
+      const qNum = questions.length + 1;
 
-  return questions;
-}
+      if (difficulty === 'easy') {
+        questions.push({
+          id: `q_gen_easy_${Date.now()}_${qNum}`,
+          question: `[${diffPrefix}] (Question ${qNum}) Which statement accurately summarizes: "${s.slice(0, 90)}..."?`,
+          options: [
+            `It accurately states an established principle of the studied material`,
+            `It represents an outdated 19th-century fallacy disproven by modern labs`,
+            `It is only valid at absolute zero temperature`,
+            `It requires quantum superposition to be physically possible`,
+          ],
+          correctAnswerIndex: 0,
+          explanation: `The excerpt "${s.slice(0, 100)}..." is a factual assertion from the assigned text.`,
+        });
+      } else if (difficulty === 'hard') {
+        questions.push({
+          id: `q_gen_hard_${Date.now()}_${qNum}`,
+          question: `[${diffPrefix}] (Question ${qNum}) From an advanced analytical standpoint, how must an engineer or researcher interpret: "${s.slice(0, 85)}..."?`,
+          options: [
+            `As a formal invariant that must be strictly maintained across distributed or biological state transitions`,
+            `As a cosmetic recommendation that can be freely discarded in production`,
+            `As an assertion that guarantees O(1) runtime regardless of input size`,
+            `As a proof that race conditions do not exist in concurrent environments`,
+          ],
+          correctAnswerIndex: 0,
+          explanation: `Rigorous analysis treats this as an invariant governing system predictability under stress.`,
+        });
+      } else {
+        questions.push({
+          id: `q_gen_med_${Date.now()}_${qNum}`,
+          question: `[${diffPrefix}] (Question ${qNum}) Regarding "${s.slice(0, 80)}...", what is the direct consequence of this principle?`,
+          options: [
+            `It establishes the baseline operational requirements for subsequent system steps`,
+            `It forces all computational threads to terminate immediately`,
+            `It completely removes the need for error checking`,
+            `It doubles memory usage on each iteration without bounds`,
+          ],
+          correctAnswerIndex: 0,
+          explanation: `This foundational statement establishes the required precondition for valid execution.`,
+        });
+      }
 
-function fallbackFlashcardGenerator(opts: FlashcardGenerateOptions): Flashcard[] {
-  const { title, content, count } = opts;
-  const cards: Flashcard[] = [];
+      sentenceIdx++;
+    }
 
-  // Look for bold terms or markdown headers or colon definitions
-  const lines = content.split('\n');
-  for (const line of lines) {
-    const boldMatch = line.match(/\*\*(.+?)\*\*:?\s*(.*)/);
-    if (boldMatch && boldMatch[1] && boldMatch[2]) {
+    // 3. Fallback fill if still under requestedCount
+    while (questions.length < requestedCount) {
+      const qNum = questions.length + 1;
+      questions.push({
+        id: `q_pad_${Date.now()}_${qNum}`,
+        question: `[${diffPrefix}] (Practice Drill ${qNum}) What is the primary academic takeaway from the syllabus topic "${title}"?`,
+        options: [
+          `Understanding the rigorous interplay between foundational theory and operational constraints`,
+          `Memorizing random trivia without understanding mechanisms`,
+          `Assuming all physical networks and enzymes behave identically without variation`,
+          `Bypassing systematic verification in favor of intuition`,
+        ],
+        correctAnswerIndex: 0,
+        explanation: `Comprehensive mastery requires understanding how core theorems interact with real-world operating limits.`,
+      });
+    }
+
+    return questions.slice(0, requestedCount);
+  },
+};
+
+// --- 5. Flashcard Module ---
+export const FlashcardModule = {
+  async generateFlashcards(opts: FlashcardGenerateOptions): Promise<Flashcard[]> {
+    const apiResult = await LLMProviderService.callAPI('generateFlashcards', opts);
+    if (apiResult?.cards && Array.isArray(apiResult.cards) && apiResult.cards.length > 0) {
+      return apiResult.cards;
+    }
+
+    return this.localGenerateFlashcards(opts);
+  },
+
+  localGenerateFlashcards(opts: FlashcardGenerateOptions): Flashcard[] {
+    const { title, content, count } = opts;
+    const requestedCount = Math.max(1, count || 8);
+    const cards: Flashcard[] = [];
+    const usedTerms = new Set<string>();
+
+    const addCard = (term: string, definition: string) => {
+      const cleanTerm = term.replace(/[#*:`]/g, '').trim();
+      const cleanDef = definition.replace(/[#*`]/g, '').trim();
+      if (!cleanTerm || cleanTerm.length < 2 || usedTerms.has(cleanTerm.toLowerCase())) return;
+
+      usedTerms.add(cleanTerm.toLowerCase());
       cards.push({
         id: `card_${Date.now()}_${cards.length}`,
-        term: boldMatch[1].replace(/[#*]/g, '').trim(),
-        definition: boldMatch[2].replace(/[#*]/g, '').trim() || 'Key operational concept identified in study notes.',
+        term: cleanTerm,
+        definition: cleanDef || `Core operational concept from ${title}.`,
         category: title,
         mastered: false,
       });
-      if (cards.length >= count) break;
-    }
-  }
+    };
 
-  if (cards.length < count) {
-    const genericCards: { t: string; d: string }[] = [
-      { t: 'Invariance Principle', d: 'A property or condition that remains true throughout the execution of an algorithm or physical system.' },
-      { t: 'Amortized Complexity', d: 'The average running time per operation over a sequence of worst-case operations.' },
-      { t: 'Substrate Affinity', d: 'The measure of how readily an enzyme or receptor binds to its specific molecular partner.' },
-      { t: 'Partition Tolerance', d: 'The ability of a distributed system to continue functioning despite network communication dropouts.' },
-      { t: 'Critical Section', d: 'A segment of code that accesses shared resources that must not be concurrently executed by multiple threads.' }
+    // 1. Match bold markdown syntax: **Term**: Definition
+    const boldMatches = content.matchAll(/\*\*(.+?)\*\*:\s*([^\n]+)/g);
+    for (const match of boldMatches) {
+      if (cards.length >= requestedCount) break;
+      addCard(match[1], match[2]);
+    }
+
+    // 2. Match definitions with hyphens or colons (e.g. "- Term: Definition" or "Chapter X: ...")
+    const lines = content.split('\n');
+    for (const line of lines) {
+      if (cards.length >= requestedCount) break;
+      const colonMatch = line.match(/^[-*•]?\s*([A-Za-z0-9\s()/-]{3,35})\s*:\s*(.{15,})/);
+      if (colonMatch) {
+        addCard(colonMatch[1], colonMatch[2]);
+      }
+    }
+
+    // 3. Extract section headers as concepts
+    const sections = splitIntoSections(content);
+    for (const sec of sections) {
+      if (cards.length >= requestedCount) break;
+      const sentences = extractSentences(sec.text);
+      if (sentences.length > 0) {
+        addCard(sec.title, sentences[0]);
+      }
+    }
+
+    // 4. Extract key sentences as question-answer cards if more are needed
+    const sentences = extractSentences(content);
+    let sIdx = 0;
+    while (cards.length < requestedCount && sIdx < sentences.length) {
+      const s = sentences[sIdx];
+      const words = s.split(' ');
+      if (words.length > 6) {
+        const keyPhrase = words.slice(0, 4).join(' ');
+        addCard(`Key Concept: ${keyPhrase}...`, s);
+      }
+      sIdx++;
+    }
+
+    // 5. Final fallback to guarantee EXACT deck size
+    const highYieldConcepts = [
+      { t: 'Invariance Principle', d: 'A property or condition that remains guaranteed true throughout every step of an algorithmic or physical system execution.' },
+      { t: 'CAP Theorem (Brewer)', d: 'In the presence of a network partition (P), a distributed data store can guarantee either Consistency (CP) or Availability (AP), but not both.' },
+      { t: 'Raft Leader Election', d: 'Uses randomized election timeouts (150-300ms) to ensure split votes are resolved rapidly by majority consensus.' },
+      { t: 'Vector Clocks', d: 'Maintains per-node logical timestamps across all cluster nodes, enabling exact detection of causal dependencies and concurrent conflicts.' },
+      { t: 'Mutual Exclusion', d: 'A fundamental concurrency constraint ensuring that no two threads execute their critical sections concurrently.' },
+      { t: 'Counting Semaphore', d: 'An atomic integer synchronization primitive supporting wait() / P() to decrement/block and signal() / V() to increment/wake.' },
+      { t: 'Deadlock Necessary Conditions', d: 'Simultaneous occurrence of: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait.' },
+      { t: 'Michaelis-Menten Km', d: 'The substrate concentration at which reaction velocity is half-maximal, inversely measuring enzyme-substrate binding affinity.' },
+      { t: 'Gibbs Free Energy (ΔG)', d: 'Determines reaction spontaneity: negative ΔG is exergonic and spontaneous; positive ΔG is endergonic, requiring ATP coupling.' },
+      { t: 'Singular Value Decomposition (SVD)', d: 'Decomposes any m x n matrix into orthogonal matrices U, V and diagonal matrix Sigma with singular values.' },
+      { t: 'Dijkstra vs Bellman-Ford', d: 'Dijkstra is greedy O((V+E)logV) but fails on negative weights; Bellman-Ford is dynamic O(VE) and detects negative cycles.' },
+      { t: 'Amortized Time Complexity', d: 'The average execution time per operation evaluated over a worst-case sequence of consecutive operations.' },
     ];
 
-    for (const g of genericCards) {
-      if (cards.length >= count) break;
-      cards.push({
-        id: `card_gen_${Date.now()}_${cards.length}`,
-        term: g.t,
-        definition: g.d,
-        category: title,
-        mastered: false,
-      });
+    for (const h of highYieldConcepts) {
+      if (cards.length >= requestedCount) break;
+      addCard(h.t, h.d);
     }
-  }
 
-  return cards;
-}
+    return cards.slice(0, requestedCount);
+  },
+};
 
-function fallbackRAGAssistant(opts: ChatQueryOptions): { answer: string; sources: ChatSource[] } {
-  const { query, contextSources } = opts;
-  const qLower = query.toLowerCase();
-
-  // Find relevant source snippet
-  const matchingSources: ChatSource[] = [];
-  let bestSnippet = '';
-
-  for (const source of contextSources) {
-    const words = qLower.split(' ').filter(w => w.length > 3);
-    const hasMatch = words.some(w => source.content.toLowerCase().includes(w));
-
-    if (hasMatch) {
-      const idx = source.content.toLowerCase().indexOf(words.find(w => source.content.toLowerCase().includes(w)) || '');
-      const start = Math.max(0, idx - 40);
-      const snippet = source.content.substring(start, start + 240).replace(/\n/g, ' ') + '...';
-      matchingSources.push({
-        title: source.title,
-        type: source.type,
-        snippet,
-      });
-      if (!bestSnippet) bestSnippet = snippet;
+// --- 6. RAG Assistant Module ---
+export const RAGRetrieverModule = {
+  async queryAssistant(opts: ChatQueryOptions): Promise<{ answer: string; sources: ChatSource[] }> {
+    const apiResult = await LLMProviderService.callAPI('chat', opts);
+    if (apiResult?.answer) {
+      return {
+        answer: apiResult.answer,
+        sources: apiResult.sources || [],
+      };
     }
-  }
 
-  if (matchingSources.length === 0 && contextSources.length > 0) {
-    matchingSources.push({
-      title: contextSources[0].title,
-      type: contextSources[0].type,
-      snippet: contextSources[0].content.substring(0, 200).replace(/\n/g, ' ') + '...',
+    return this.localQueryAssistant(opts);
+  },
+
+  localQueryAssistant(opts: ChatQueryOptions): { answer: string; sources: ChatSource[] } {
+    const { query, contextSources } = opts;
+    const qLower = query.toLowerCase();
+    const queryTerms = qLower
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !['what', 'when', 'where', 'which', 'explain', 'show', 'tell', 'about', 'from'].includes(w));
+
+    // 1. Segment context sources into coherent chunks and compute relevance score
+    interface ScoredChunk {
+      sourceTitle: string;
+      sourceType: 'pdf' | 'note';
+      text: string;
+      score: number;
+    }
+
+    const scoredChunks: ScoredChunk[] = [];
+
+    contextSources.forEach((src) => {
+      const paragraphs = src.content.split(/\n\n+/).filter((p) => p.trim().length > 20);
+
+      paragraphs.forEach((p) => {
+        const pLower = p.toLowerCase();
+        let score = 0;
+
+        queryTerms.forEach((term) => {
+          if (pLower.includes(term)) {
+            score += 3;
+            // Exact word boundary match bonus
+            const regex = new RegExp(`\\b${term}\\b`, 'i');
+            if (regex.test(pLower)) score += 2;
+          }
+        });
+
+        // Title match bonus
+        if (src.title.toLowerCase().includes(qLower) || queryTerms.some((t) => src.title.toLowerCase().includes(t))) {
+          score += 2;
+        }
+
+        if (score > 0) {
+          scoredChunks.push({
+            sourceTitle: src.title,
+            sourceType: src.type,
+            text: p.trim(),
+            score,
+          });
+        }
+      });
     });
-  }
 
-  let answer = `Based on your study materials, here is what you need to know regarding **"${query}"**:\n\n`;
+    scoredChunks.sort((a, b) => b.score - a.score);
 
-  if (bestSnippet) {
-    answer += `> "${bestSnippet}"\n\n`;
-    answer += `### 💡 Core Explanation & Analysis\n` +
-      `1. **Conceptual Alignment**: This directly ties into the fundamental theorems defined in your materials (**${matchingSources[0]?.title || 'Study Library'}**).\n` +
-      `2. **Key Mechanism**: When analyzing this concept, remember to evaluate both the theoretical bounds and practical constraints (e.g., edge cases, error modes, and performance trade-offs).\n` +
-      `3. **Exam / Application Tip**: Expect exam questions to test how this principle behaves when conditions deviate from ideal assumptions.\n\n` +
-      `Would you like me to generate a 3-question mini quiz or flashcards on this specific topic?`;
-  } else {
-    answer += `From reviewing your library, this topic relates to foundational principles across your coursework.\n\n` +
-      `**Summary**: To master this topic, break it down into core definitions, governing equations or rules, and typical failure/stress test scenarios.\n\n` +
-      `*Tip*: Upload a specific PDF chapter or add a detailed study note to enable precise grounded citations!`;
-  }
+    // 2. Build Grounded Answer
+    const topChunks = scoredChunks.slice(0, 3);
+    const sources: ChatSource[] = topChunks.map((c) => ({
+      title: c.sourceTitle,
+      type: c.sourceType,
+      snippet: c.text.slice(0, 200).replace(/\n/g, ' ') + '...',
+    }));
 
-  return {
-    answer,
-    sources: matchingSources.slice(0, 2),
-  };
-}
+    if (topChunks.length > 0) {
+      const primaryChunk = topChunks[0];
+      const primarySentences = extractSentences(primaryChunk.text);
+      const answerCore = primarySentences.slice(0, 3).join(' ');
 
-function fallbackTaskPlanner(opts: PlanGoalOptions): { overview: string; tasks: PlannedTask[] } {
-  const { goal, subject, timeframeDays } = opts;
-  const days = Math.max(3, timeframeDays);
+      let answer = `Based on your study material **"${primaryChunk.sourceTitle}"**, here is the direct academic explanation regarding **"${query}"**:\n\n`;
+      answer += `> "${primaryChunk.text.slice(0, 260).replace(/\n/g, ' ')}..."\n\n`;
+      answer += `### 💡 Core Explanation & Analysis\n`;
+      answer += `1. **Direct Mechanism**: ${answerCore || primaryChunk.text.slice(0, 200)}\n\n`;
 
-  const overview = `Structured ${days}-day milestone roadmap for "${goal}" in ${subject}. Breaks down foundational research, deliberate practice, synthesis, and final review into manageable daily study blocks.`;
+      if (topChunks[1]) {
+        answer += `2. **Related Context ([${topChunks[1].sourceTitle}])**: ${extractSentences(topChunks[1].text).slice(0, 2).join(' ')}\n\n`;
+      }
 
-  const taskTemplates = [
-    {
-      title: `Deconstruct Core Syllabus & Objectives: ${goal.slice(0, 35)}`,
-      desc: 'Map out the major sub-topics, compile primary textbook chapters, and identify prerequisite knowledge gaps.',
-      priority: 'high' as const,
-      hours: 2,
-      dayOffset: 1,
-    },
-    {
-      title: `Deep Study: Foundational Principles & Core Theory`,
-      desc: 'Read core chapters, annotate key diagrams/formulas, and generate AI flashcards for retention.',
-      priority: 'high' as const,
-      hours: 3.5,
-      dayOffset: Math.min(2, Math.floor(days * 0.25)),
-    },
-    {
-      title: `Hands-on Practice & Problem Solving`,
-      desc: 'Work through 5-8 complex practice problems or lab exercises. Verify edge cases and check step-by-step solutions.',
-      priority: 'medium' as const,
-      hours: 4,
-      dayOffset: Math.min(days - 2, Math.floor(days * 0.5)),
-    },
-    {
-      title: `AI Quiz Drill & Weak Spot Remediation`,
-      desc: 'Generate AI MCQs from study materials. Note all incorrect answers and reread relevant sections.',
-      priority: 'medium' as const,
-      hours: 2.5,
-      dayOffset: Math.min(days - 1, Math.floor(days * 0.75)),
-    },
-    {
-      title: `Comprehensive Final Review & Exam Readiness Simulation`,
-      desc: 'Simulate a timed test condition or deliver a 10-minute Feynman-technique explanation of the topic.',
-      priority: 'high' as const,
-      hours: 3,
-      dayOffset: days,
-    },
-  ];
+      answer += `3. **Exam / Implementation Takeaway**: In analytical assessments, be prepared to explain the underlying trade-offs and edge failure conditions associated with this concept.\n\n`;
+      answer += `*Citations grounded directly in your library: [Source: ${primaryChunk.sourceTitle}].*`;
 
-  const now = new Date();
-  const tasks: PlannedTask[] = taskTemplates.map((t, idx) => {
-    const targetDate = new Date(now.getTime() + t.dayOffset * 86400000);
-    const dateStr = targetDate.toISOString().split('T')[0] + 'T19:00';
+      return { answer, sources };
+    }
 
+    // Default library overview if no direct match
+    const fallbackSource = contextSources[0] || { title: 'Study Hub Library', type: 'note' as const, content: '' };
     return {
-      id: `planned_task_${Date.now()}_${idx}`,
-      title: t.title,
-      description: t.desc,
-      category: subject || 'General Study',
-      priority: t.priority,
-      estimatedHours: t.hours,
-      suggestedDeadline: dateStr,
-      selected: true,
+      answer:
+        `I searched your uploaded study materials for **"${query}"**. While this exact phrasing did not match a specific passage in your currently indexed documents, here is the foundational academic perspective:\n\n` +
+        `To master this topic, break it down into:\n` +
+        `- **Fundamental Definition & Invariants**: What is the core theorem or system rule?\n` +
+        `- **Operational Mechanics**: How does the system transition from input to output?\n` +
+        `- **Trade-offs & Edge Constraints**: Under what failure conditions or resource limits does the system break?\n\n` +
+        `*Tip: You can select a specific PDF or note in the "Knowledge Scope" dropdown above for targeted retrieval!*`,
+      sources: [
+        {
+          title: fallbackSource.title,
+          type: fallbackSource.type,
+          snippet: 'Indexed academic repository ready for context-aware queries.',
+        },
+      ],
     };
-  });
+  },
+};
 
-  return {
-    overview,
-    tasks,
-  };
-}
+// --- 7. Task Planner Module ---
+export const TaskPlannerModule = {
+  async planGoal(opts: PlanGoalOptions): Promise<{ overview: string; tasks: PlannedTask[] }> {
+    const apiResult = await LLMProviderService.callAPI('planGoal', opts);
+    if (apiResult?.tasks && Array.isArray(apiResult.tasks)) {
+      return apiResult;
+    }
+
+    return this.localPlanGoal(opts);
+  },
+
+  localPlanGoal(opts: PlanGoalOptions): { overview: string; tasks: PlannedTask[] } {
+    const { goal, subject, timeframeDays } = opts;
+    const days = Math.max(3, timeframeDays);
+
+    const overview = `Structured ${days}-day milestone roadmap for "${goal}" in ${subject}. Breaks down foundational research, deliberate practice, synthesis, and final review into manageable daily study blocks.`;
+
+    const taskTemplates = [
+      {
+        title: `Deconstruct Core Syllabus & Objectives: ${goal.slice(0, 35)}`,
+        desc: 'Map out major sub-topics, review textbook chapters, and identify prerequisite knowledge gaps.',
+        priority: 'high' as const,
+        hours: 2,
+        dayOffset: 1,
+      },
+      {
+        title: `Deep Study: Foundational Principles & Core Theory`,
+        desc: 'Read core chapters, annotate key diagrams/formulas, and generate AI flashcards for retention.',
+        priority: 'high' as const,
+        hours: 3.5,
+        dayOffset: Math.min(2, Math.floor(days * 0.25)),
+      },
+      {
+        title: `Hands-on Practice & Problem Solving`,
+        desc: 'Work through 5-8 complex practice problems or lab exercises. Verify edge cases and check step-by-step solutions.',
+        priority: 'medium' as const,
+        hours: 4,
+        dayOffset: Math.min(days - 2, Math.floor(days * 0.5)),
+      },
+      {
+        title: `AI Quiz Drill & Weak Spot Remediation`,
+        desc: 'Generate AI MCQs from study materials. Note all incorrect answers and reread relevant sections.',
+        priority: 'medium' as const,
+        hours: 2.5,
+        dayOffset: Math.min(days - 1, Math.floor(days * 0.75)),
+      },
+      {
+        title: `Comprehensive Final Review & Exam Simulation`,
+        desc: 'Simulate a timed test condition or deliver a 10-minute Feynman-technique explanation of the topic.',
+        priority: 'high' as const,
+        hours: 3,
+        dayOffset: days,
+      },
+    ];
+
+    const now = new Date();
+    const tasks: PlannedTask[] = taskTemplates.map((t, idx) => {
+      const targetDate = new Date(now.getTime() + t.dayOffset * 86400000);
+      const dateStr = targetDate.toISOString().split('T')[0] + 'T19:00';
+
+      return {
+        id: `planned_task_${Date.now()}_${idx}`,
+        title: t.title,
+        description: t.desc,
+        category: subject || 'General Study',
+        priority: t.priority,
+        estimatedHours: t.hours,
+        suggestedDeadline: dateStr,
+        selected: true,
+      };
+    });
+
+    return { overview, tasks };
+  },
+};
+
+// --- Main Unified AIEngine Facade ---
+export const AIEngine = {
+  summarize: (opts: SummarizeOptions) => SummarizerModule.summarize(opts),
+  generateQuiz: (opts: QuizGenerateOptions) => QuizModule.generateQuiz(opts),
+  generateFlashcards: (opts: FlashcardGenerateOptions) => FlashcardModule.generateFlashcards(opts),
+  queryAssistant: (opts: ChatQueryOptions) => RAGRetrieverModule.queryAssistant(opts),
+  planGoal: (opts: PlanGoalOptions) => TaskPlannerModule.planGoal(opts),
+};

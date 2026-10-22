@@ -170,11 +170,11 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex bg-[#1c1c20] p-1 rounded-lg border border-white/5">
+          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`p-1.5 rounded text-xs flex items-center gap-1.5 transition-colors ${
-                viewMode === 'kanban' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
+              className={`px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${
+                viewMode === 'kanban' ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
               title="Kanban Board View"
             >
@@ -183,8 +183,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded text-xs flex items-center gap-1.5 transition-colors ${
-                viewMode === 'list' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
+              className={`px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all ${
+                viewMode === 'list' ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
               title="List View"
             >
@@ -195,7 +195,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
           <button
             onClick={handleCreateNew}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all"
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             Add Task
@@ -204,9 +204,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#1c1c20] rounded-xl border border-white/5 p-3.5 flex flex-wrap items-center gap-3 shadow-md">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-3.5 flex flex-wrap items-center gap-3 shadow-xl">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={searchQuery}

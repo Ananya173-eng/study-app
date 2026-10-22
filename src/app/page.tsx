@@ -26,6 +26,7 @@ import { AITaskPlanner } from '@/components/AI/AITaskPlanner';
 import { AuthModal } from '@/components/Common/AuthModal';
 import { SettingsModal } from '@/components/Common/SettingsModal';
 import { ToastContainer } from '@/components/Common/ToastContainer';
+import { AIStudyHubLanding } from '@/components/Landing/AIStudyHubLanding';
 import {
   Menu,
   Search,
@@ -37,9 +38,14 @@ import {
   Eye,
   PanelLeft,
   X,
+  Home as HomeIcon,
+  LogOut,
 } from 'lucide-react';
 
 export default function Home() {
+  // Mode state: 'app' (Direct interactive study workspace) or 'landing' (showcase interface)
+  const [mode, setMode] = useState<'app' | 'landing'>('app');
+
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -76,6 +82,12 @@ export default function Home() {
     setMaterials(Storage.getMaterials());
     setQuizzes(Storage.getQuizzes());
     setFlashcards(Storage.getFlashcards());
+
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#app' || window.location.search.includes('view=app')) {
+        setMode('app');
+      }
+    }
   }, []);
 
   // Keyboard shortcut Ctrl+B to toggle sidebar
@@ -117,6 +129,20 @@ export default function Home() {
   const handleLogin = (updatedUser: User) => {
     setUser(updatedUser);
     Storage.setUser(updatedUser);
+  };
+
+  const handleSignOut = () => {
+    const guestUser: User = {
+      id: 'guest_student',
+      name: 'Student User',
+      email: 'student@university.edu',
+      major: 'General Studies',
+      targetWeeklyHours: 20,
+      streakDays: 1,
+    };
+    setUser(guestUser);
+    Storage.setUser(guestUser);
+    addToast('info', 'Signed Out', 'You have been signed out from your workspace.');
   };
 
   // Notes Actions
@@ -192,6 +218,12 @@ export default function Home() {
     Storage.setMaterials(updated);
   };
 
+  const handleUpdateMaterial = (updatedMaterial: StudyMaterial) => {
+    const updated = materials.map((m) => (m.id === updatedMaterial.id ? updatedMaterial : m));
+    setMaterials(updated);
+    Storage.setMaterials(updated);
+  };
+
   // Quizzes & Flashcards
   const handleSaveQuiz = (quiz: Quiz) => {
     const exists = quizzes.some((q) => q.id === quiz.id);
@@ -230,6 +262,31 @@ export default function Home() {
     setCurrentView('notes');
   };
 
+  // If in Landing Mode, render the full AI Study Hub website interface (matching aistudyhub.org)
+  if (mode === 'landing') {
+    return (
+      <>
+        <AIStudyHubLanding
+          onOpenApp={(view) => {
+            if (view) setCurrentView(view);
+            setMode('app');
+          }}
+          onOpenAuth={() => setIsAuthOpen(true)}
+        />
+        <AuthModal
+          isOpen={isAuthOpen}
+          currentUser={user}
+          onClose={() => setIsAuthOpen(false)}
+          onLogin={(updatedUser) => {
+            handleLogin(updatedUser);
+            setMode('app');
+          }}
+        />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </>
+    );
+  }
+
   // Theme Classes for the requested balanced "na hi jyada light na jyada dark"
   const themeClass =
     themeMode === 'soft'
@@ -239,8 +296,17 @@ export default function Home() {
       : 'bg-[#1a1d24] text-[#edf0f7]'; // default eye-care calm
 
   return (
-    <div className={`flex h-screen w-screen overflow-hidden ${themeClass} font-sans selection:bg-pink-500/30 selection:text-white`}>
-      {/* 1. Left Modern Explorer Sidebar (Magnific Inspired) */}
+    <div className="relative flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans selection:bg-purple-500 selection:text-white">
+      {/* Ambient background glows from aistudyhub.org */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-slate-950" aria-hidden="true">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-indigo-600/15 via-purple-600/10 to-transparent blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute -top-32 -left-20 w-[30rem] h-[30rem] bg-gradient-to-tr from-fuchsia-600/20 via-violet-600/15 to-indigo-500/15 rounded-full blur-3xl opacity-40 animate-pulse" />
+        <div className="absolute top-1/3 -right-20 w-[28rem] h-[28rem] bg-gradient-to-b from-blue-600/15 via-cyan-500/15 to-violet-600/15 rounded-full blur-3xl opacity-30 animate-pulse [animation-delay:2s]" />
+        <div className="absolute bottom-10 left-1/3 w-[22rem] h-[22rem] bg-gradient-to-tr from-purple-600/15 via-indigo-500/15 to-pink-500/15 rounded-full blur-3xl opacity-25 animate-pulse [animation-delay:4s]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+      </div>
+
+      {/* 1. Left Modern Explorer Sidebar */}
       {isSidebarOpen && (
         <VSCodeExplorer
           currentView={currentView}
@@ -264,50 +330,59 @@ export default function Home() {
       )}
 
       {/* 2. Main Content Workspace */}
-      <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[#171920]">
-        {/* Magnific-Style Header with Centered Pill Search Bar */}
-        <header className="h-16 px-4 md:px-8 border-b border-[#323846] bg-[#1c1f26]/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 z-20">
+      <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-950/40 backdrop-blur-sm">
+        {/* Sleek Dark Header with Centered Pill Search Bar */}
+        <header className="h-16 px-4 md:px-8 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl flex items-center justify-between gap-4 shrink-0 z-20">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMode('landing')}
+              title="View Marketing Landing Page"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white border border-slate-800 transition-all shadow-sm"
+            >
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400 font-extrabold text-sm">✦</span>
+              <span className="hidden sm:inline">Landing Page</span>
+            </button>
+
             {!isSidebarOpen && (
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 title="Open Sidebar (Ctrl+B)"
-                className="p-2 rounded-xl text-[#9aa2b4] hover:text-white hover:bg-[#252934] transition-colors border border-[#323846]"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-colors border border-slate-800"
               >
                 <PanelLeft className="w-4 h-4" />
               </button>
             )}
 
-            <div className="hidden sm:flex items-center gap-2 text-xs text-[#9aa2b4]">
-              <span className="font-bold text-[#edf0f7] tracking-tight">AI Study Hub</span>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+              <span className="font-bold text-white tracking-tight">AI Study Hub</span>
               <span>/</span>
-              <span className="capitalize text-pink-400 font-medium">
+              <span className="capitalize bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-fuchsia-400 font-semibold">
                 {currentView.replace('ai-', 'AI ')}
               </span>
             </div>
           </div>
 
-          {/* Centered Pill Search Bar (From Magnific Screenshot) */}
+          {/* Centered Pill Search Bar */}
           <div className="flex-1 max-w-xl mx-2 md:mx-4">
             <form onSubmit={handleGlobalSearchSubmit} className="relative">
-              <Search className="absolute left-4 top-2.5 w-4 h-4 text-[#9aa2b4]" />
+              <Search className="absolute left-4 top-2.5 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
                 placeholder="Search notes, tasks, or ask AI anything..."
-                className="w-full pl-11 pr-12 py-2 bg-[#252934] hover:bg-[#282d3b] focus:bg-[#252934] border border-[#323846] focus:border-pink-500/60 rounded-full text-xs text-[#edf0f7] placeholder-[#80899c] focus:outline-none transition-all shadow-sm"
+                className="w-full pl-11 pr-12 py-2 bg-slate-900/80 hover:bg-slate-900 focus:bg-slate-900 border border-slate-800 focus:border-indigo-500/60 rounded-full text-xs text-slate-100 placeholder-slate-400 focus:outline-none transition-all shadow-sm"
               />
               {globalSearch ? (
                 <button
                   type="button"
                   onClick={() => setGlobalSearch('')}
-                  className="absolute right-3.5 top-2.5 text-[#9aa2b4] hover:text-white"
+                  className="absolute right-3.5 top-2.5 text-slate-400 hover:text-white"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <span className="absolute right-4 top-2.5 text-[10px] font-mono font-semibold text-[#80899c] bg-[#1c1f26] px-1.5 py-0.5 rounded border border-[#323846]">
+                <span className="absolute right-4 top-2.5 text-[10px] font-mono font-semibold text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
                   ⌘K
                 </span>
               )}
@@ -316,46 +391,6 @@ export default function Home() {
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Eye-Care Theme Switcher (Calm / Soft / Midnight) */}
-            <div className="hidden md:flex items-center bg-[#252934] p-1 rounded-full border border-[#323846]">
-              <button
-                onClick={() => {
-                  setThemeMode('calm');
-                  addToast('info', 'Eye-Care Slate Active', 'Balanced, soothing mode optimal for studying without glare.');
-                }}
-                title="Eye-Care Calm Mode (Recommended for reading)"
-                className={`p-1.5 rounded-full transition-colors ${
-                  themeMode === 'calm' ? 'bg-pink-500 text-white shadow-sm' : 'text-[#9aa2b4] hover:text-white'
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => {
-                  setThemeMode('soft');
-                  addToast('info', 'Soft Paper Mode', 'Warm gentle tone for daytime focus.');
-                }}
-                title="Soft Paper Mode"
-                className={`p-1.5 rounded-full transition-colors ${
-                  themeMode === 'soft' ? 'bg-pink-500 text-white shadow-sm' : 'text-[#9aa2b4] hover:text-white'
-                }`}
-              >
-                <SunMedium className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => {
-                  setThemeMode('dark');
-                  addToast('info', 'Midnight Dark Mode', 'Deeper contrast mode.');
-                }}
-                title="Midnight Dark Mode"
-                className={`p-1.5 rounded-full transition-colors ${
-                  themeMode === 'dark' ? 'bg-pink-500 text-white shadow-sm' : 'text-[#9aa2b4] hover:text-white'
-                }`}
-              >
-                <Moon className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
             {/* Streak Pill */}
             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold shadow-sm">
               <Flame className="w-3.5 h-3.5 text-amber-400" />
@@ -366,21 +401,33 @@ export default function Home() {
             <button
               onClick={() => setIsSettingsOpen(true)}
               title="Hub Settings & AI Keys"
-              className="p-2 rounded-xl text-[#9aa2b4] hover:text-white hover:bg-[#252934] border border-[#323846] transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800 transition-colors"
             >
               <Settings className="w-4 h-4" />
             </button>
 
-            {/* User Profile Pill */}
-            <button
-              onClick={() => setIsAuthOpen(true)}
-              className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-[#252934] hover:bg-[#2c3140] border border-[#323846] text-xs text-[#edf0f7] transition-all shadow-sm"
-            >
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-pink-500 to-rose-400 flex items-center justify-center text-[10px] font-bold text-white shadow-sm overflow-hidden">
-                {user.name.charAt(0)}
-              </div>
-              <span className="hidden sm:inline font-semibold">{user.name.split(' ')[0]}</span>
-            </button>
+            {/* User Profile Pill & Sign-Out Button */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                title="Account Settings"
+                className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs text-slate-200 transition-all shadow-sm"
+              >
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-fuchsia-500 flex items-center justify-center text-[10px] font-bold text-white shadow-sm overflow-hidden">
+                  {user.name.charAt(0)}
+                </div>
+                <span className="hidden sm:inline font-semibold">{user.name.split(' ')[0]}</span>
+              </button>
+
+              <button
+                onClick={handleSignOut}
+                title="Sign Out of Workspace"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 border border-red-500/20 text-xs font-semibold transition-all shadow-sm"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -438,6 +485,7 @@ export default function Home() {
               materials={materials}
               onAddMaterial={handleAddMaterial}
               onDeleteMaterial={handleDeleteMaterial}
+              onUpdateMaterial={handleUpdateMaterial}
               onSelectView={setCurrentView}
               onSetAIContent={handleSetAIContent}
               onNotify={addToast}
@@ -499,6 +547,7 @@ export default function Home() {
         currentUser={user}
         onClose={() => setIsAuthOpen(false)}
         onLogin={handleLogin}
+        onSignOut={handleSignOut}
       />
 
       {/* Settings & API Key Modal */}

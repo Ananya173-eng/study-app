@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --color-bg-base: #1a1d24;
-  --color-bg-surface: #242833;
-  --color-bg-surface-hover: #2b303d;
-  --color-border: #333947;
-  --color-text-primary: #edf0f7;
-  --color-text-secondary: #9aa2b4;
+  --color-bg-base: #020617;
+  --color-bg-surface: #0f172a;
+  --color-bg-surface-hover: #1e293b;
+  --color-border: #1e293b;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
 }
 
 body {
@@ -18,23 +18,23 @@ body {
   overflow-x: hidden;
 }
 
-/* Eye-friendly calm scrollbars */
+/* Modern AI Study Hub sleek scrollbars */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #181a20;
+  background: #020617;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #393f4e;
+  background: #1e293b;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a5266;
+  background: #334155;
 }
 
 /* Rock-Solid Zero-Ghosting 3D Flashcard Flip */
@@ -73,14 +73,14 @@ body {
 }
 
 .flashcard-front {
-  background-color: #242833;
+  background-color: #0f172a;
   transform: rotateY(0deg);
   -webkit-transform: rotateY(0deg);
   z-index: 2;
 }
 
 .flashcard-back {
-  background-color: #1f232d;
+  background-color: #020617;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   z-index: 1;

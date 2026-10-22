@@ -46,11 +46,16 @@ export const NotesView: React.FC<NotesViewProps> = ({
   // Editor Modal State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [editorFormat, setEditorFormat] = useState<'normal' | 'markdown'>('normal');
   const [editTitle, setEditTitle] = useState('');
   const [editCategory, setEditCategory] = useState('Computer Science');
   const [editPriority, setEditPriority] = useState<Priority>('medium');
   const [editTags, setEditTags] = useState('');
   const [editContent, setEditContent] = useState('');
+
+  const insertTextSnippet = (snippet: string) => {
+    setEditContent((prev) => (prev ? `${prev}\n${snippet}` : snippet));
+  };
 
   // Delete Confirmation Modal State
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
@@ -186,7 +191,7 @@ export const NotesView: React.FC<NotesViewProps> = ({
 
         <button
           onClick={handleCreateNew}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all w-fit"
+          className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all w-fit hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
           Create New Note
@@ -194,17 +199,17 @@ export const NotesView: React.FC<NotesViewProps> = ({
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-[#1c1c20] rounded-xl border border-white/5 p-3.5 space-y-3 shadow-md">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-3.5 space-y-3 shadow-xl">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search notes by keyword, title, or content..."
-              className="w-full pl-9 pr-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
             />
             {searchQuery && (
               <button
@@ -319,7 +324,7 @@ export const NotesView: React.FC<NotesViewProps> = ({
             <div
               key={note.id}
               onClick={() => handleEditNote(note)}
-              className="p-5 rounded-xl bg-[#1c1c20] border border-white/5 hover:border-blue-500/40 hover:bg-[#202026] cursor-pointer transition-all flex flex-col justify-between group shadow-lg"
+              className="p-5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 hover:border-slate-700 hover:bg-slate-900/80 cursor-pointer transition-all flex flex-col justify-between group shadow-xl hover:-translate-y-1"
             >
               <div>
                 {/* Meta row */}
@@ -512,15 +517,84 @@ export const NotesView: React.FC<NotesViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  Note Content (Markdown supported)
-                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <label className="block text-xs font-semibold text-gray-300">
+                    Note Content
+                  </label>
+                  {/* Format Selector */}
+                  <div className="flex items-center gap-1 bg-[#121214] p-1 rounded-lg border border-gray-800">
+                    <button
+                      type="button"
+                      onClick={() => setEditorFormat('normal')}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        editorFormat === 'normal'
+                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-sm'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      📝 Normal Format (Default)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditorFormat('markdown')}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                        editorFormat === 'markdown'
+                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-sm'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      ⚡ Markdown Format
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Toolbar for Normal Format */}
+                {editorFormat === 'normal' ? (
+                  <div className="flex flex-wrap items-center gap-1.5 p-2 mb-2 bg-[#121214] border border-gray-800 rounded-lg text-xs">
+                    <span className="text-[11px] font-medium text-gray-400 mr-1">Quick Tools:</span>
+                    <button
+                      type="button"
+                      onClick={() => insertTextSnippet('• ')}
+                      className="px-2 py-1 rounded bg-[#202024] hover:bg-[#2a2a30] text-gray-200 border border-gray-700 transition-colors"
+                    >
+                      • Bullet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTextSnippet('1. ')}
+                      className="px-2 py-1 rounded bg-[#202024] hover:bg-[#2a2a30] text-gray-200 border border-gray-700 transition-colors"
+                    >
+                      1. Numbered
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTextSnippet('📌 Key Takeaway: ')}
+                      className="px-2 py-1 rounded bg-[#202024] hover:bg-[#2a2a30] text-amber-300 border border-amber-500/30 transition-colors"
+                    >
+                      📌 Highlight
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTextSnippet('---')}
+                      className="px-2 py-1 rounded bg-[#202024] hover:bg-[#2a2a30] text-gray-300 border border-gray-700 transition-colors"
+                    >
+                      Divider
+                    </button>
+                  </div>
+                ) : null}
+
                 <textarea
                   rows={12}
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  placeholder="Type your notes here... You can use headings (#), bullet points (-), code blocks (```), and formulas ($$)."
-                  className="w-full px-3 py-2.5 bg-[#202024] border border-gray-700 rounded-lg text-xs text-white font-mono focus:outline-none focus:border-blue-500 leading-relaxed custom-scrollbar"
+                  placeholder={
+                    editorFormat === 'normal'
+                      ? 'Write your study notes here in standard plain text. Type natural paragraphs, summaries, key facts, or use the quick tools above. No markdown required!'
+                      : 'Type your notes using Markdown syntax (# for headings, ** for bold, ``` for code blocks, $$ for LaTeX).'
+                  }
+                  className={`w-full px-3.5 py-3 bg-[#202024] border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500 leading-relaxed custom-scrollbar ${
+                    editorFormat === 'normal' ? 'font-sans' : 'font-mono text-xs'
+                  }`}
                 />
               </div>
 
@@ -534,7 +608,7 @@ export const NotesView: React.FC<NotesViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-md shadow-blue-600/30 flex items-center gap-1.5"
+                  className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 rounded-xl shadow-lg shadow-indigo-500/25 flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Save Note

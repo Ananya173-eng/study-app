@@ -136,20 +136,20 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Configuration Controls */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-5 rounded-xl bg-[#1c1c20] border border-white/5 space-y-4 shadow-lg">
+          <div className="p-5 rounded-xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 space-y-4 shadow-xl">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-amber-400" />
               1. Select Source Material
             </h3>
 
             {/* Source Type Selector */}
-            <div className="grid grid-cols-3 gap-2 p-1 bg-[#121214] rounded-lg border border-white/5">
+            <div className="grid grid-cols-3 gap-2 p-1 bg-slate-950/60 rounded-lg border border-slate-800">
               <button
                 type="button"
                 onClick={() => setSelectedSourceType('material')}
                 className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   selectedSourceType === 'material'
-                    ? 'bg-purple-600 text-white shadow'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -161,7 +161,7 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
                 onClick={() => setSelectedSourceType('note')}
                 className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   selectedSourceType === 'note'
-                    ? 'bg-blue-600 text-white shadow'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -173,7 +173,7 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
                 onClick={() => setSelectedSourceType('custom')}
                 className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   selectedSourceType === 'custom'
-                    ? 'bg-emerald-600 text-white shadow'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -269,8 +269,8 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
                       onClick={() => setStyle(item.id as any)}
                       className={`p-2 rounded-lg text-left border transition-all text-xs font-medium ${
                         style === item.id
-                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
-                          : 'bg-[#121214] border-gray-800 text-gray-400 hover:text-white'
+                          ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
+                          : 'bg-slate-950/60 border-slate-800 text-gray-400 hover:text-white'
                       }`}
                     >
                       {item.label}
@@ -291,8 +291,8 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
                       onClick={() => setDepth(d)}
                       className={`py-1.5 rounded-lg capitalize border text-center font-medium transition-all ${
                         depth === d
-                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
-                          : 'bg-[#121214] border-gray-800 text-gray-400 hover:text-white'
+                          ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
+                          : 'bg-slate-950/60 border-slate-800 text-gray-400 hover:text-white'
                       }`}
                     >
                       {d}
@@ -305,7 +305,7 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
             <button
               onClick={handleGenerateSummary}
               disabled={isLoading || !activeContent.trim()}
-              className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-semibold text-xs rounded-lg shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <>
@@ -324,7 +324,7 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
 
         {/* Right Column: Output Summary Viewer */}
         <div className="lg:col-span-7">
-          <div className="p-5 rounded-xl bg-[#1c1c20] border border-white/5 min-h-[480px] flex flex-col justify-between shadow-lg">
+          <div className="p-5 rounded-xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 min-h-[480px] flex flex-col justify-between shadow-xl">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/5">
                 <div>
@@ -348,7 +348,7 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
                     </button>
                     <button
                       onClick={handleSaveToNotes}
-                      className="px-2.5 py-1.5 rounded bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-xs flex items-center gap-1.5 transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white text-xs font-medium flex items-center gap-1.5 transition-all shadow-md shadow-indigo-500/20"
                       title="Save as Study Note"
                     >
                       <BookmarkPlus className="w-3.5 h-3.5" />
@@ -362,13 +362,13 @@ export const AISummarizer: React.FC<AISummarizerProps> = ({
               <div className="py-4">
                 {isLoading ? (
                   <div className="py-20 text-center space-y-3">
-                    <Loader2 className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
+                    <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
                     <p className="text-xs text-gray-400">
                       Reading document, extracting key definitions, and synthesizing summary...
                     </p>
                   </div>
                 ) : summaryResult ? (
-                  <div className="prose prose-invert max-w-none text-xs text-gray-200 leading-relaxed space-y-3 whitespace-pre-wrap font-sans bg-[#141418] p-4 rounded-xl border border-white/5">
+                  <div className="prose prose-invert max-w-none text-xs text-gray-200 leading-relaxed space-y-3 whitespace-pre-wrap font-sans bg-slate-950/70 p-4 rounded-xl border border-slate-800">
                     {summaryResult}
                   </div>
                 ) : (

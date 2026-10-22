@@ -163,14 +163,14 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Generator Configuration */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-5 rounded-xl bg-[#1c1c20] border border-white/5 space-y-4 shadow-lg">
+          <div className="p-5 rounded-xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 space-y-4 shadow-xl">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-emerald-400" />
               1. Quiz Parameters
             </h3>
 
             {/* Source Type Toggle */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-[#121214] rounded-lg border border-white/5">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950/60 rounded-lg border border-slate-800">
               <button
                 type="button"
                 onClick={() => {
@@ -179,7 +179,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                 }}
                 className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   sourceType === 'material'
-                    ? 'bg-purple-600 text-white shadow'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -194,7 +194,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                 }}
                 className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   sourceType === 'note'
-                    ? 'bg-blue-600 text-white shadow'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -212,7 +212,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                 >
                   {materials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -229,7 +229,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                 >
                   {notes.map((n) => (
                     <option key={n.id} value={n.id}>
@@ -249,7 +249,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                 <select
                   value={questionCount}
                   onChange={(e) => setQuestionCount(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                 >
                   <option value={3}>3 Questions (Quick)</option>
                   <option value={5}>5 Questions (Standard)</option>
@@ -264,7 +264,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-[#121214] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                 >
                   <option value="easy">Easy (Fundamentals)</option>
                   <option value="medium">Medium (Application)</option>
@@ -276,7 +276,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !selectedSource}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
@@ -294,7 +294,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
 
           {/* Previous Quizzes Library */}
           {quizzes.length > 0 && (
-            <div className="p-4 rounded-xl bg-[#1c1c20] border border-white/5 space-y-2.5">
+            <div className="p-4 rounded-xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 space-y-2.5 shadow-xl">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
                 Your Saved Quizzes ({quizzes.length})
               </h4>
@@ -310,13 +310,13 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                     }}
                     className={`w-full text-left p-2 rounded-lg text-xs flex items-center justify-between border transition-all ${
                       activeQuiz?.id === q.id
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                        : 'bg-[#141418] border-white/5 text-gray-400 hover:text-white'
+                        ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300'
+                        : 'bg-slate-950/60 border-slate-800 text-gray-400 hover:text-white'
                     }`}
                   >
                     <span className="truncate pr-2 font-medium">{q.title}</span>
                     {q.bestScore !== undefined && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                         {q.bestScore}%
                       </span>
                     )}
@@ -330,7 +330,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
         {/* Right Column: Interactive Quiz Player */}
         <div className="lg:col-span-7">
           {activeQuiz && currentQ ? (
-            <div className="p-6 rounded-xl bg-[#1c1c20] border border-white/5 flex flex-col justify-between min-h-[500px] shadow-lg">
+            <div className="p-6 rounded-xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 flex flex-col justify-between min-h-[500px] shadow-xl">
               <div>
                 {/* Header & Progress */}
                 <div className="flex items-center justify-between pb-3 border-b border-white/5">
@@ -439,7 +439,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                     </span>
                     <button
                       onClick={handleRestartQuiz}
-                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white flex items-center gap-1.5 transition-colors"
+                      className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-md shadow-indigo-500/20"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Retake Quiz</span>
@@ -449,7 +449,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                   <button
                     onClick={handleFinishQuiz}
                     disabled={Object.keys(selectedAnswers).length === 0}
-                    className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-xs font-bold text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] flex items-center gap-1.5 transition-all disabled:opacity-50"
                   >
                     <span>Submit & Check Score</span>
                     <Award className="w-4 h-4" />
@@ -461,7 +461,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                         Math.min(activeQuiz.questions.length - 1, prev + 1)
                       )
                     }
-                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white flex items-center gap-1"
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 flex items-center gap-1 transition-all"
                   >
                     <span>Next Question</span>
                     <ChevronRight className="w-4 h-4" />
@@ -470,8 +470,8 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-12 text-center bg-[#1c1c20] rounded-xl border border-white/5 space-y-3 min-h-[480px] flex flex-col items-center justify-center">
-              <HelpCircle className="w-10 h-10 text-emerald-400 opacity-40 mx-auto" />
+            <div className="p-12 text-center bg-slate-900/60 backdrop-blur-xl rounded-xl border border-slate-800 space-y-3 min-h-[480px] flex flex-col items-center justify-center">
+              <HelpCircle className="w-10 h-10 text-indigo-400 opacity-40 mx-auto" />
               <h3 className="text-sm font-bold text-white">No Active Quiz</h3>
               <p className="text-xs text-gray-400 max-w-sm">
                 Select a document or note on the left and click &ldquo;Generate AI Quiz&rdquo; to test your knowledge!

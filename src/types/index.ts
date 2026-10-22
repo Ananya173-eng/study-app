@@ -50,6 +50,7 @@ export interface StudyMaterial {
   pageCount?: number;
   tags: string[];
   isAnalyzed?: boolean;
+  contentHash?: string;
 }
 
 export interface QuizQuestion {

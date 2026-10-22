@@ -173,14 +173,14 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Generator Configuration */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-5 rounded-2xl bg-[#242833] border border-[#333947] space-y-4 shadow-sm">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#edf0f7] flex items-center gap-2">
+          <div className="p-5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 space-y-4 shadow-xl">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-cyan-400" />
               1. Choose Source & Size
             </h3>
 
             {/* Source Type Toggle */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-[#1a1d24] rounded-xl border border-[#333947]">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950/60 rounded-xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => {
@@ -189,8 +189,8 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                 }}
                 className={`py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   sourceType === 'note'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-[#9aa2b4] hover:text-white'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
+                    : 'text-gray-400 hover:text-white'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -204,8 +204,8 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                 }}
                 className={`py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   sourceType === 'material'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-[#9aa2b4] hover:text-white'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow'
+                    : 'text-gray-400 hover:text-white'
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -216,13 +216,13 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
             {/* Source Selector */}
             {sourceType === 'note' ? (
               <div>
-                <label className="block text-[11px] font-semibold text-[#9aa2b4] uppercase mb-1">
+                <label className="block text-[11px] font-semibold text-gray-400 uppercase mb-1">
                   Select Study Note
                 </label>
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-[#1a1d24] border border-[#333947] rounded-xl text-xs text-[#edf0f7] focus:outline-none focus:border-cyan-500 transition-colors"
+                  className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
                 >
                   {notes.map((n) => (
                     <option key={n.id} value={n.id}>
@@ -233,13 +233,13 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
               </div>
             ) : (
               <div>
-                <label className="block text-[11px] font-semibold text-[#9aa2b4] uppercase mb-1">
+                <label className="block text-[11px] font-semibold text-gray-400 uppercase mb-1">
                   Select PDF Document
                 </label>
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-[#1a1d24] border border-[#333947] rounded-xl text-xs text-[#edf0f7] focus:outline-none focus:border-cyan-500 transition-colors"
+                  className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
                 >
                   {materials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -251,13 +251,13 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
             )}
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#9aa2b4] uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-gray-400 uppercase mb-1">
                 Deck Size
               </label>
               <select
                 value={cardCount}
                 onChange={(e) => setCardCount(Number(e.target.value))}
-                className="w-full px-3 py-2.5 bg-[#1a1d24] border border-[#333947] rounded-xl text-xs text-[#edf0f7] focus:outline-none focus:border-cyan-500 transition-colors"
+                className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
               >
                 <option value={4}>4 Cards (Quick Review)</option>
                 <option value={8}>8 Cards (Standard Deck)</option>
@@ -268,7 +268,7 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !selectedSource}
-              className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
@@ -286,8 +286,8 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
 
           {/* Saved Decks Shelf */}
           {decks.length > 0 && (
-            <div className="p-4 rounded-2xl bg-[#242833] border border-[#333947] space-y-2.5 shadow-sm">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#9aa2b4]">
+            <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 space-y-2.5 shadow-xl">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
                 Saved Flashcard Decks ({decks.length})
               </h4>
               <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
@@ -302,12 +302,12 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                     }}
                     className={`w-full text-left p-2.5 rounded-xl text-xs flex items-center justify-between border transition-all ${
                       activeDeck?.id === d.id
-                        ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300 font-semibold'
-                        : 'bg-[#1a1d24] border-[#333947] text-[#9aa2b4] hover:text-white hover:bg-[#202430]'
+                        ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300 font-semibold'
+                        : 'bg-slate-950/60 border-slate-800 text-gray-400 hover:text-white hover:bg-slate-900'
                     }`}
                   >
                     <span className="truncate pr-2">{d.title}</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#242833] text-[#9aa2b4]">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 text-gray-400 border border-slate-800">
                       {d.cards.length} cards
                     </span>
                   </button>
@@ -320,15 +320,15 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
         {/* Right Column: Rock-Solid Flashcard Viewer (ZERO BLEED-THROUGH) */}
         <div className="lg:col-span-7">
           {activeDeck && currentCard ? (
-            <div className="p-6 rounded-2xl bg-[#242833] border border-[#333947] flex flex-col justify-between min-h-[520px] shadow-sm">
+            <div className="p-6 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 flex flex-col justify-between min-h-[520px] shadow-xl">
               <div>
                 {/* Header & Controls */}
-                <div className="flex items-center justify-between pb-3 border-b border-[#333947]">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                       Card {currentCardIndex + 1} of {totalCards}
                     </span>
-                    <h3 className="text-sm font-bold text-[#edf0f7] truncate max-w-sm mt-0.5">
+                    <h3 className="text-sm font-bold text-white truncate max-w-sm mt-0.5">
                       {activeDeck.title}
                     </h3>
                   </div>
@@ -336,14 +336,14 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={handleShuffle}
-                      className="p-2 text-[#9aa2b4] hover:text-white rounded-xl hover:bg-[#1a1d24] transition-colors"
+                      className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
                       title="Shuffle Deck"
                     >
                       <Shuffle className="w-4 h-4" />
                     </button>
                     <button
                       onClick={handleReset}
-                      className="p-2 text-[#9aa2b4] hover:text-white rounded-xl hover:bg-[#1a1d24] transition-colors"
+                      className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
                       title="Reset Progress"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -352,9 +352,9 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                 </div>
 
                 {/* Progress bar */}
-                <div className="w-full h-1.5 bg-[#1a1d24] rounded-full overflow-hidden mt-3">
+                <div className="w-full h-1.5 bg-slate-950/80 rounded-full overflow-hidden mt-3">
                   <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -367,53 +367,53 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                   >
                     {!isFlipped ? (
                       /* FRONT FACE: TOPIC / QUESTION */
-                      <div className="min-h-[270px] rounded-2xl p-8 bg-[#1a1d24] border-2 border-cyan-500/30 shadow-md flex flex-col justify-between items-center text-center">
+                      <div className="min-h-[270px] rounded-2xl p-8 bg-slate-950/70 border-2 border-indigo-500/30 hover:border-indigo-500/60 shadow-lg flex flex-col justify-between items-center text-center transition-all">
                         <div className="w-full flex justify-between items-center text-xs">
-                          <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[10px] font-semibold uppercase tracking-wider">
+                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[10px] font-semibold uppercase tracking-wider">
                             {currentCard.category || 'Concept / Term'}
                           </span>
-                          <span className="flex items-center gap-1.5 text-[#9aa2b4] text-[11px]">
-                            <Eye className="w-3.5 h-3.5 text-cyan-400" /> Click to reveal answer
+                          <span className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                            <Eye className="w-3.5 h-3.5 text-indigo-400" /> Click to reveal answer
                           </span>
                         </div>
 
                         <div className="my-auto py-6 max-w-md">
-                          <span className="text-xs font-semibold text-cyan-400/90 uppercase tracking-widest block mb-2">
+                          <span className="text-xs font-semibold text-indigo-400/90 uppercase tracking-widest block mb-2">
                             Term / Question
                           </span>
-                          <h2 className="text-2xl md:text-3xl font-extrabold text-[#edf0f7] tracking-tight leading-snug">
+                          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-snug">
                             {currentCard.term}
                           </h2>
                         </div>
 
-                        <div className="w-full pt-3 border-t border-[#2d3240] flex items-center justify-center gap-2 text-xs text-[#9aa2b4]">
-                          <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
+                        <div className="w-full pt-3 border-t border-slate-800 flex items-center justify-center gap-2 text-xs text-gray-400">
+                          <RotateCw className="w-3.5 h-3.5 text-indigo-400 animate-spin-slow" />
                           <span>Tap card or press &ldquo;Flip Card&rdquo; below</span>
                         </div>
                       </div>
                     ) : (
                       /* BACK FACE: DEFINITION & EXPLANATION ONLY (CLEAN, NO TOPIC OVERLAY) */
-                      <div className="min-h-[270px] rounded-2xl p-8 bg-[#1f2430] border-2 border-emerald-500/40 shadow-md flex flex-col justify-between items-center text-center animate-fade-in">
+                      <div className="min-h-[270px] rounded-2xl p-8 bg-slate-950/90 border-2 border-fuchsia-500/40 shadow-lg flex flex-col justify-between items-center text-center animate-fade-in transition-all">
                         <div className="w-full flex justify-between items-center text-xs">
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3 text-emerald-400" /> Definition & Explanation
+                          <span className="px-2.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3 text-fuchsia-400" /> Definition & Explanation
                           </span>
-                          <span className="flex items-center gap-1.5 text-[#9aa2b4] text-[11px]">
-                            <RotateCw className="w-3.5 h-3.5 text-emerald-400" /> Click to flip back
+                          <span className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                            <RotateCw className="w-3.5 h-3.5 text-fuchsia-400" /> Click to flip back
                           </span>
                         </div>
 
                         <div className="my-auto py-4 max-w-lg">
-                          <p className="text-sm md:text-base font-normal text-[#edf0f7] leading-relaxed">
+                          <p className="text-sm md:text-base font-normal text-gray-100 leading-relaxed">
                             {currentCard.definition}
                           </p>
                         </div>
 
-                        <div className="w-full pt-3 border-t border-[#2d3240] flex items-center justify-between text-xs text-[#9aa2b4]">
-                          <span className="text-[11px] text-emerald-400 font-medium">
+                        <div className="w-full pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-gray-400">
+                          <span className="text-[11px] text-fuchsia-400 font-medium">
                             Recall accuracy check
                           </span>
-                          <span className="text-[11px] text-[#9aa2b4]">
+                          <span className="text-[11px] text-gray-500">
                             Did you know this?
                           </span>
                         </div>
@@ -424,10 +424,10 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
               </div>
 
               {/* Bottom Card Controls */}
-              <div className="pt-4 border-t border-[#333947] flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
                 <button
                   onClick={handlePrev}
-                  className="px-3.5 py-2.5 rounded-xl bg-[#1a1d24] hover:bg-[#202430] text-xs text-[#edf0f7] border border-[#333947] flex items-center gap-1.5 transition-colors shadow-sm"
+                  className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Previous</span>
@@ -436,7 +436,7 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                 {/* Flip Button */}
                 <button
                   onClick={handleFlip}
-                  className="px-4 py-2.5 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 text-cyan-300 text-xs font-semibold flex items-center gap-2 transition-all shadow-sm"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/25 active:scale-[0.98]"
                 >
                   <RotateCw className="w-4 h-4" />
                   <span>{isFlipped ? 'Show Term' : 'Flip Card'}</span>
@@ -448,16 +448,16 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
                   className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all shadow-sm ${
                     isCurrentMastered
                       ? 'bg-emerald-600/25 border-emerald-500 text-emerald-300'
-                      : 'bg-[#1a1d24] border-[#333947] text-[#9aa2b4] hover:text-white'
+                      : 'bg-slate-800 border-slate-700 text-gray-300 hover:text-white'
                   }`}
                 >
-                  <CheckCircle2 className={`w-4 h-4 ${isCurrentMastered ? 'text-emerald-400' : 'text-[#9aa2b4]'}`} />
+                  <CheckCircle2 className={`w-4 h-4 ${isCurrentMastered ? 'text-emerald-400' : 'text-gray-400'}`} />
                   <span>{isCurrentMastered ? 'Mastered!' : 'Mark Mastered'}</span>
                 </button>
 
                 <button
                   onClick={handleNext}
-                  className="px-3.5 py-2.5 rounded-xl bg-[#1a1d24] hover:bg-[#202430] text-xs text-[#edf0f7] border border-[#333947] flex items-center gap-1.5 transition-colors shadow-sm"
+                  className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
                 >
                   <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
@@ -465,10 +465,10 @@ export const AIFlashcards: React.FC<AIFlashcardsProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-12 text-center bg-[#242833] rounded-2xl border border-[#333947] space-y-3 min-h-[520px] flex flex-col items-center justify-center shadow-sm">
-              <Layers className="w-10 h-10 text-cyan-400 opacity-40 mx-auto" />
-              <h3 className="text-sm font-bold text-[#edf0f7]">No Flashcard Deck Selected</h3>
-              <p className="text-xs text-[#9aa2b4] max-w-sm">
+            <div className="p-12 text-center bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 space-y-3 min-h-[520px] flex flex-col items-center justify-center shadow-xl">
+              <Layers className="w-10 h-10 text-indigo-400 opacity-40 mx-auto" />
+              <h3 className="text-sm font-bold text-white">No Flashcard Deck Selected</h3>
+              <p className="text-xs text-gray-400 max-w-sm">
                 Generate flashcards from your study materials or notes to begin your memory review drill.
               </p>
             </div>

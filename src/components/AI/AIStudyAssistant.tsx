@@ -157,7 +157,7 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
           <select
             value={selectedFilter}
             onChange={(e) => setSelectedFilter(e.target.value)}
-            className="px-3 py-1.5 bg-[#1c1c20] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500"
+            className="px-3 py-1.5 bg-slate-900/60 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
           >
             <option value="all">Entire Library ({materials.length + notes.length} sources)</option>
             <optgroup label="Uploaded PDFs">
@@ -178,7 +178,7 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
 
           <button
             onClick={handleClearHistory}
-            className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5 transition-colors"
+            className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
             title="Clear Chat History"
           >
             <RotateCcw className="w-4 h-4" />
@@ -187,7 +187,7 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
       </div>
 
       {/* Main Chat Container */}
-      <div className="bg-[#1c1c20] rounded-2xl border border-white/5 flex flex-col h-[650px] shadow-2xl overflow-hidden">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 flex flex-col h-[650px] shadow-2xl overflow-hidden">
         {/* Messages Scroll Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
           {messages.map((msg) => {
@@ -200,8 +200,8 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                     isUser
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-purple-600 text-white border border-purple-400/40 shadow-lg shadow-purple-900/40'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                      : 'bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white border border-fuchsia-400/40 shadow-lg shadow-purple-900/40'
                   }`}
                 >
                   {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -210,8 +210,8 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
                 <div
                   className={`rounded-2xl p-4 text-xs leading-relaxed space-y-2.5 ${
                     isUser
-                      ? 'bg-blue-600 text-white rounded-tr-none'
-                      : 'bg-[#222228] border border-white/5 text-gray-200 rounded-tl-none shadow-md'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-none shadow-md'
+                      : 'bg-slate-950/70 border border-slate-800 text-gray-200 rounded-tl-none shadow-md'
                   }`}
                 >
                   <div className="prose prose-invert max-w-none text-xs whitespace-pre-wrap font-sans">
@@ -270,10 +270,10 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
 
           {isThinking && (
             <div className="flex gap-3 max-w-2xl mr-auto animate-pulse">
-              <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="p-4 rounded-2xl rounded-tl-none bg-[#222228] border border-white/5 text-xs text-purple-300 flex items-center gap-2">
+              <div className="p-4 rounded-2xl rounded-tl-none bg-slate-950/70 border border-slate-800 text-xs text-indigo-300 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Searching knowledge library and generating grounded synthesis...</span>
               </div>
@@ -285,7 +285,7 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
 
         {/* Suggested Quick Prompts */}
         {messages.length <= 2 && (
-          <div className="px-4 py-2 border-t border-white/5 bg-[#18181c] flex items-center gap-2 overflow-x-auto custom-scrollbar">
+          <div className="px-4 py-2 border-t border-slate-800 bg-slate-950/60 flex items-center gap-2 overflow-x-auto custom-scrollbar">
             <span className="text-[10px] uppercase font-bold text-gray-400 shrink-0">
               Suggested:
             </span>
@@ -293,7 +293,7 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
               <button
                 key={idx}
                 onClick={() => handleSend(p)}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 shrink-0 transition-colors truncate max-w-xs"
+                className="text-[11px] px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-gray-300 hover:text-white border border-slate-800 shrink-0 transition-colors truncate max-w-xs"
               >
                 {p}
               </button>
@@ -302,7 +302,7 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
         )}
 
         {/* Input Bar */}
-        <div className="p-4 bg-[#18181c] border-t border-white/5">
+        <div className="p-4 bg-slate-950/60 border-t border-slate-800">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -315,12 +315,12 @@ export const AIStudyAssistant: React.FC<AIStudyAssistantProps> = ({
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               placeholder="Ask anything about your uploaded PDFs, notes, or coursework..."
-              className="flex-1 px-4 py-3 bg-[#121214] border border-gray-700 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+              className="flex-1 px-4 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
             />
             <button
               type="submit"
               disabled={isThinking || !inputQuery.trim()}
-              className="p-3 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-purple-600/30 transition-all shrink-0"
+              className="p-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] transition-all shrink-0"
               title="Send message"
             >
               <Send className="w-4 h-4" />

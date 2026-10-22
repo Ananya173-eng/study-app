@@ -2,13 +2,26 @@
 
 import React, { useState } from 'react';
 import { User } from '@/types';
-import { X, Lock, Mail, User as UserIcon, GraduationCap, Sparkles, CheckCircle } from 'lucide-react';
+import {
+  X,
+  Lock,
+  Mail,
+  User as UserIcon,
+  GraduationCap,
+  Sparkles,
+  CheckCircle,
+  Zap,
+  ShieldCheck,
+  ArrowRight,
+  LogOut,
+} from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
   currentUser: User;
   onClose: () => void;
   onLogin: (user: User) => void;
+  onSignOut?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -16,8 +29,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   onClose,
   onLogin,
+  onSignOut,
 }) => {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'profile'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState(currentUser.name);
   const [email, setEmail] = useState(currentUser.email);
   const [password, setPassword] = useState('');
@@ -42,7 +56,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    if (mode !== 'profile' && password.length < 6) {
+    if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
     }
@@ -79,176 +93,214 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-[#18181b] border border-gray-800 rounded-2xl shadow-2xl p-6 text-gray-100 overflow-hidden">
-        {/* Glow decoration */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-44 h-44 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-4xl bg-slate-900/95 backdrop-blur-2xl border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row text-slate-100">
+        {/* Left Visual Column with AI Study Hero Image */}
+        <div className="relative w-full md:w-5/12 bg-cover bg-center min-h-[220px] md:min-h-[540px] flex flex-col justify-between p-6 md:p-8 overflow-hidden select-none">
+          {/* Background image & gradient overlay */}
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-105 filter brightness-90"
+            style={{ backgroundImage: `url('/images/ai_study_hero.jpg')` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-950/80 md:block hidden" />
 
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-white">
-                {mode === 'signin' ? 'Sign In to Hub' : mode === 'signup' ? 'Create Student Account' : 'Student Profile'}
-              </h3>
-              <p className="text-xs text-gray-400">AI Study & Productivity Hub</p>
+          {/* Top Badge */}
+          <div className="relative z-10">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-900/80 text-fuchsia-300 border border-fuchsia-500/30 backdrop-blur-md shadow-lg">
+              <Sparkles className="w-3.5 h-3.5 text-fuchsia-400" />
+              ✦ AI Study Hub
+            </span>
+          </div>
+
+          {/* Bottom Overlay Text */}
+          <div className="relative z-10 space-y-2 mt-auto">
+            <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight leading-snug drop-shadow-md">
+              Elevate your academic workflow.
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed drop-shadow">
+              Synthesize notes, master complex syllabus topics with MCQs & 3D flashcards, and chat with your PDFs using RAG.
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 backdrop-blur-sm">
+                ⚡ Intent-Driven
+              </span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 backdrop-blur-sm">
+                🧠 Context-Aware
+              </span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30 backdrop-blur-sm">
+                🎯 Active Recall
+              </span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex bg-[#121214] p-1 rounded-lg mb-5 border border-white/5">
-          <button
-            type="button"
-            onClick={() => { setMode('signin'); setError(''); }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              mode === 'signin' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('signup'); setError(''); }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              mode === 'signup' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            Register
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('profile'); setError(''); }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              mode === 'profile' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            My Profile
-          </button>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-2.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          {(mode === 'signup' || mode === 'profile') && (
-            <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1">Full Name</label>
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Alex Rivera"
-                  className="w-full pl-9 pr-3 py-2 bg-[#232328] border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-          )}
-
+        {/* Right Form Column */}
+        <div className="flex-1 p-6 md:p-8 flex flex-col justify-between bg-slate-950/60 backdrop-blur-xl">
           <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@university.edu"
-                className="w-full pl-9 pr-3 py-2 bg-[#232328] border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          {mode !== 'profile' && (
-            <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 bg-[#232328] border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {(mode === 'signup' || mode === 'profile') && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Field / Major</label>
+                <h3 className="text-lg font-bold text-white">
+                  {mode === 'signin' ? 'Welcome Back' : 'Create Student Account'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Sign in to access your notes, tasks, and uploaded PDFs
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mode Switcher Tabs & Sign-Out feature */}
+            <div className="flex bg-slate-950 p-1 rounded-xl my-4 border border-slate-800 gap-1.5">
+              <button
+                type="button"
+                onClick={() => { setMode('signin'); setError(''); }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  mode === 'signin' ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMode('signup'); setError(''); }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  mode === 'signup' ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Register
+              </button>
+              {onSignOut && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSignOut();
+                    onClose();
+                  }}
+                  className="flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-red-400 hover:text-red-300 hover:bg-red-500/15 flex items-center justify-center gap-1.5 border border-red-500/20"
+                  title="Sign Out of Workspace"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              )}
+            </div>
+
+            {error && (
+              <div className="mb-3.5 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-3.5 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>{success}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              {mode === 'signup' && (
+                <div>
+                  <label className="block text-xs font-medium text-[#9aa2b4] mb-1">Full Name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Alex Rivera"
+                      className="w-full pl-10 pr-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Student Email Address</label>
                 <div className="relative">
-                  <GraduationCap className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+                  <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                   <input
-                    type="text"
-                    value={major}
-                    onChange={(e) => setMajor(e.target.value)}
-                    placeholder="Computer Science"
-                    className="w-full pl-9 pr-2 py-2 bg-[#232328] border border-gray-700 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="student@university.edu"
+                    className="w-full pl-10 pr-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
               </div>
+
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Target Hours/Wk</label>
-                <input
-                  type="number"
-                  min="5"
-                  max="80"
-                  value={weeklyGoal}
-                  onChange={(e) => setWeeklyGoal(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#232328] border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
-                />
+                <label className="block text-xs font-medium text-slate-400 mb-1">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
               </div>
-            </div>
-          )}
 
-          <button
-            type="submit"
-            className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-lg shadow-blue-600/30 transition-all"
-          >
-            {mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Save Profile Changes'}
-          </button>
-        </form>
+              {mode === 'signup' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Major / Field</label>
+                    <div className="relative">
+                      <GraduationCap className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={major}
+                        onChange={(e) => setMajor(e.target.value)}
+                        placeholder="Computer Science"
+                        className="w-full pl-9 pr-2 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Target Hours/Wk</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="80"
+                      value={weeklyGoal}
+                      onChange={(e) => setWeeklyGoal(Number(e.target.value))}
+                      className="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              )}
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-800" />
+              <button
+                type="submit"
+                className="w-full mt-2 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 hover:from-indigo-400 hover:via-purple-400 hover:to-fuchsia-400 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]"
+              >
+                <span>{mode === 'signin' ? 'Sign In to Workspace' : 'Create Student Account'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </form>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-[#18181b] px-2 text-gray-500">Or quick test</span>
+
+          {/* 1-Click Demo Login Button */}
+          <div className="pt-4 mt-4 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2 group shadow-sm"
+            >
+              <Sparkles className="w-4 h-4 text-fuchsia-400 group-hover:rotate-12 transition-transform" />
+              <span>Sign In with 1-Click Demo Student Account</span>
+            </button>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-gray-300 hover:text-white transition-colors flex items-center justify-center gap-2"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          Sign In with 1-Click Demo Student Account
-        </button>
       </div>
     </div>
   );
