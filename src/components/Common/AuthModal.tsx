@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { User } from '@/types';
+import { apiClient } from '@/lib/api-client';
 import {
   X,
   Lock,
@@ -40,9 +41,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -61,35 +64,76 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const updatedUser: User = {
-      ...currentUser,
-      name: name || 'Student User',
-      email: email,
-      major: major,
-      targetWeeklyHours: Number(weeklyGoal),
-      streakDays: currentUser.streakDays || 1,
-    };
+    setIsSubmitting(true);
+    try {
+      if (mode === 'signup') {
+        const result = await apiClient.register({
+          name: name || 'Student User',
+          email,
+          password,
+          major,
+          targetWeeklyHours: Number(weeklyGoal),
+        });
+        onLogin(result.user);
+        setSuccess('Account created and authenticated securely!');
+      } else {
+        const result = await apiClient.login({
+          email,
+          password,
+        });
+        onLogin(result.user);
+        setSuccess('Signed in successfully!');
+      }
 
-    onLogin(updatedUser);
-    setSuccess(mode === 'signup' ? 'Account created successfully!' : 'Signed in successfully!');
-    setTimeout(() => {
-      setSuccess('');
-      onClose();
-    }, 600);
+      setTimeout(() => {
+        setSuccess('');
+        setIsSubmitting(false);
+        onClose();
+      }, 600);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setError(err?.message || 'Authentication failed. Please check your credentials.');
+    }
   };
 
-  const handleDemoLogin = () => {
-    const demoUser: User = {
-      id: 'demo_student',
-      name: 'Alex Rivera',
-      email: 'alex.rivera@university.edu',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      major: 'Computer Science & AI',
-      targetWeeklyHours: 25,
-      streakDays: 7,
-    };
-    onLogin(demoUser);
-    onClose();
+  const handleDemoLogin = async () => {
+    setIsSubmitting(true);
+    setError('');
+    try {
+      // Sign in with demo student account
+      const result = await apiClient.login({
+        email: 'alex.rivera@university.edu',
+        password: 'password123',
+      });
+      onLogin(result.user);
+      setSuccess('Signed in with Demo Student Account!');
+      setTimeout(() => {
+        setSuccess('');
+        setIsSubmitting(false);
+        onClose();
+      }, 500);
+    } catch {
+      // Fallback if demo user is not yet created
+      try {
+        const registered = await apiClient.register({
+          name: 'Alex Rivera',
+          email: 'alex.rivera@university.edu',
+          password: 'password123',
+          major: 'Computer Science & AI',
+          targetWeeklyHours: 25,
+        });
+        onLogin(registered.user);
+        setSuccess('Demo Student Account initialized!');
+        setTimeout(() => {
+          setSuccess('');
+          setIsSubmitting(false);
+          onClose();
+        }, 500);
+      } catch (regErr: any) {
+        setIsSubmitting(false);
+        setError(regErr?.message || 'Failed to sign in with demo account');
+      }
+    }
   };
 
   return (

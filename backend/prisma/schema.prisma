@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  notes      Note[]
+  tasks      Task[]
+  materials  StudyMaterial[]
+  quizzes    Quiz[]
+  flashcards Flashcard[]
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @default("")
+  category  String   @default("General")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  flashcards Flashcard[]
+
+  @@index([userId])
+  @@index([userId, category])
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  deadline    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, deadline])
+}
+
+model StudyMaterial {
+  id            String   @id @default(cuid())
+  title         String
+  fileName      String
+  fileUrl       String
+  mimeType      String
+  extractedText String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  quizzes    Quiz[]
+  flashcards Flashcard[]
+
+  @@index([userId])
+}
+
+model Quiz {
+  id        String   @id @default(cuid())
+  title     String
+  questions Json
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  materialId String?
+  material   StudyMaterial? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model Flashcard {
+  id        String   @id @default(cuid())
+  front     String
+  back      String   @db.Text
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  noteId String?
+  note   Note?   @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  materialId String?
+  material   StudyMaterial? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}

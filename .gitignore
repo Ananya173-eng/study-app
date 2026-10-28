@@ -23,8 +23,17 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+.env.production
+
+# backend artifacts
+backend/node_modules/
+backend/dist/
+backend/uploads/
+backend/.env
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+

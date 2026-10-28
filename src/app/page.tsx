@@ -12,6 +12,7 @@ import {
   ToastAlert,
 } from '@/types';
 import { Storage, DEFAULT_USER } from '@/lib/storage';
+import { apiClient } from '@/lib/api-client';
 import { VSCodeExplorer } from '@/components/Sidebar/VSCodeExplorer';
 import { DashboardView } from '@/components/Dashboard/DashboardView';
 import { NotesView } from '@/components/Notes/NotesView';
@@ -74,14 +75,79 @@ export default function Home() {
   // Eye-care theme modes: 'calm' (balanced eye-care slate), 'soft' (softer paper tone), 'dark' (midnight)
   const [themeMode, setThemeMode] = useState<'calm' | 'soft' | 'dark'>('calm');
 
-  // Initialize from LocalStorage
+  // Fetch user session and user-specific data from PostgreSQL backend / Next.js API
+  const refreshUserData = async () => {
+    try {
+      const currentUser = await apiClient.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        Storage.setUser(currentUser);
+      }
+
+      const [notesRes, tasksRes, materialsRes, quizzesRes, decksRes] = await Promise.allSettled([
+        apiClient.getNotes(),
+        apiClient.getTasks(),
+        apiClient.getMaterials(),
+        apiClient.getQuizzes(),
+        apiClient.getFlashcards(),
+      ]);
+
+      if (notesRes.status === 'fulfilled' && notesRes.value.length > 0) {
+        setNotes(notesRes.value);
+        Storage.setNotes(notesRes.value);
+      } else {
+        setNotes(Storage.getNotes());
+      }
+
+      if (tasksRes.status === 'fulfilled' && tasksRes.value.length > 0) {
+        setTasks(tasksRes.value);
+        Storage.setTasks(tasksRes.value);
+      } else {
+        setTasks(Storage.getTasks());
+      }
+
+      if (materialsRes.status === 'fulfilled' && materialsRes.value.length > 0) {
+        setMaterials(materialsRes.value);
+        Storage.setMaterials(materialsRes.value);
+      } else {
+        setMaterials(Storage.getMaterials());
+      }
+
+      if (quizzesRes.status === 'fulfilled' && quizzesRes.value.length > 0) {
+        setQuizzes(quizzesRes.value);
+        Storage.setQuizzes(quizzesRes.value);
+      } else {
+        setQuizzes(Storage.getQuizzes());
+      }
+
+      if (decksRes.status === 'fulfilled' && decksRes.value.length > 0) {
+        setFlashcards(decksRes.value);
+        Storage.setFlashcards(decksRes.value);
+      } else {
+        setFlashcards(Storage.getFlashcards());
+      }
+    } catch {
+      // Fallback gracefully to local storage
+      setUser(Storage.getUser());
+      setNotes(Storage.getNotes());
+      setTasks(Storage.getTasks());
+      setMaterials(Storage.getMaterials());
+      setQuizzes(Storage.getQuizzes());
+      setFlashcards(Storage.getFlashcards());
+    }
+  };
+
   useEffect(() => {
+    // Initial local read for instant render
     setUser(Storage.getUser());
     setNotes(Storage.getNotes());
     setTasks(Storage.getTasks());
     setMaterials(Storage.getMaterials());
     setQuizzes(Storage.getQuizzes());
     setFlashcards(Storage.getFlashcards());
+
+    // Fetch live isolated user data from PostgreSQL backend
+    refreshUserData();
 
     if (typeof window !== 'undefined') {
       if (window.location.hash === '#app' || window.location.search.includes('view=app')) {
@@ -129,9 +195,12 @@ export default function Home() {
   const handleLogin = (updatedUser: User) => {
     setUser(updatedUser);
     Storage.setUser(updatedUser);
+    // Refresh user-specific data from database for this account
+    refreshUserData();
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await apiClient.logout();
     const guestUser: User = {
       id: 'guest_student',
       name: 'Student User',
@@ -143,10 +212,11 @@ export default function Home() {
     setUser(guestUser);
     Storage.setUser(guestUser);
     addToast('info', 'Signed Out', 'You have been signed out from your workspace.');
+    refreshUserData();
   };
 
   // Notes Actions
-  const handleSaveNote = (note: Note) => {
+  const handleSaveNote = async (note: Note) => {
     const exists = notes.some((n) => n.id === note.id);
     let updated: Note[];
     if (exists) {
@@ -156,16 +226,29 @@ export default function Home() {
     }
     setNotes(updated);
     Storage.setNotes(updated);
+
+    // Save to PostgreSQL via API
+    try {
+      await apiClient.saveNote(note);
+    } catch (err) {
+      console.warn('Backend note sync notice:', err);
+    }
   };
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleDeleteNote = async (noteId: string) => {
     const updated = notes.filter((n) => n.id !== noteId);
     setNotes(updated);
     Storage.setNotes(updated);
+
+    try {
+      await apiClient.deleteNote(noteId);
+    } catch (err) {
+      console.warn('Backend note delete notice:', err);
+    }
   };
 
   // Tasks Actions
-  const handleSaveTask = (task: Task) => {
+  const handleSaveTask = async (task: Task) => {
     const exists = tasks.some((t) => t.id === task.id);
     let updated: Task[];
     if (exists) {
@@ -175,68 +258,126 @@ export default function Home() {
     }
     setTasks(updated);
     Storage.setTasks(updated);
+
+    try {
+      await apiClient.saveTask(task);
+    } catch (err) {
+      console.warn('Backend task sync notice:', err);
+    }
   };
 
-  const handleToggleTaskStatus = (taskId: string) => {
+  const handleToggleTaskStatus = async (taskId: string) => {
+    let toggledTask: Task | undefined;
     const updated = tasks.map((t) => {
       if (t.id === taskId) {
         const nextStatus = t.status === 'completed' ? 'todo' : 'completed';
-        return {
+        toggledTask = {
           ...t,
           status: nextStatus as any,
           completedAt: nextStatus === 'completed' ? new Date().toISOString() : undefined,
         };
+        return toggledTask;
       }
       return t;
     });
     setTasks(updated);
     Storage.setTasks(updated);
+
+    if (toggledTask) {
+      try {
+        await apiClient.saveTask(toggledTask);
+      } catch (err) {
+        console.warn('Backend task status update notice:', err);
+      }
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     const updated = tasks.filter((t) => t.id !== taskId);
     setTasks(updated);
     Storage.setTasks(updated);
+
+    try {
+      await apiClient.deleteTask(taskId);
+    } catch (err) {
+      console.warn('Backend task delete notice:', err);
+    }
   };
 
-  const handleAddTasksBatch = (newTasks: Task[]) => {
+  const handleAddTasksBatch = async (newTasks: Task[]) => {
     const updated = [...newTasks, ...tasks];
     setTasks(updated);
     Storage.setTasks(updated);
+
+    try {
+      await apiClient.saveTasksBatch(newTasks);
+    } catch (err) {
+      console.warn('Backend batch tasks sync notice:', err);
+    }
   };
 
   // Study Materials Actions
-  const handleAddMaterial = (material: StudyMaterial) => {
+  const handleAddMaterial = async (material: StudyMaterial) => {
     const updated = [material, ...materials];
     setMaterials(updated);
     Storage.setMaterials(updated);
+
+    try {
+      await apiClient.saveMaterial(material);
+    } catch (err) {
+      console.warn('Backend material sync notice:', err);
+    }
   };
 
-  const handleDeleteMaterial = (matId: string) => {
+  const handleDeleteMaterial = async (matId: string) => {
     const updated = materials.filter((m) => m.id !== matId);
     setMaterials(updated);
     Storage.setMaterials(updated);
+
+    try {
+      await apiClient.deleteMaterial(matId);
+    } catch (err) {
+      console.warn('Backend material delete notice:', err);
+    }
   };
 
-  const handleUpdateMaterial = (updatedMaterial: StudyMaterial) => {
+  const handleUpdateMaterial = async (updatedMaterial: StudyMaterial) => {
     const updated = materials.map((m) => (m.id === updatedMaterial.id ? updatedMaterial : m));
     setMaterials(updated);
     Storage.setMaterials(updated);
+
+    try {
+      await apiClient.saveMaterial(updatedMaterial);
+    } catch (err) {
+      console.warn('Backend material update notice:', err);
+    }
   };
 
   // Quizzes & Flashcards
-  const handleSaveQuiz = (quiz: Quiz) => {
+  const handleSaveQuiz = async (quiz: Quiz) => {
     const exists = quizzes.some((q) => q.id === quiz.id);
     const updated = exists ? quizzes.map((q) => (q.id === quiz.id ? quiz : q)) : [quiz, ...quizzes];
     setQuizzes(updated);
     Storage.setQuizzes(updated);
+
+    try {
+      await apiClient.saveQuiz(quiz);
+    } catch (err) {
+      console.warn('Backend quiz sync notice:', err);
+    }
   };
 
-  const handleSaveDeck = (deck: FlashcardDeck) => {
+  const handleSaveDeck = async (deck: FlashcardDeck) => {
     const exists = flashcards.some((d) => d.id === deck.id);
     const updated = exists ? flashcards.map((d) => (d.id === deck.id ? deck : d)) : [deck, ...flashcards];
     setFlashcards(updated);
     Storage.setFlashcards(updated);
+
+    try {
+      await apiClient.saveFlashcards(deck);
+    } catch (err) {
+      console.warn('Backend flashcards sync notice:', err);
+    }
   };
 
   // AI Content Hand-off
